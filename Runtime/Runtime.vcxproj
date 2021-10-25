@@ -221,6 +221,9 @@
     <CopyFileToFolders Include="effects\FSR.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\RCAS.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <CopyFileToFolders Include="effects\Jinc.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>

@@ -183,6 +183,9 @@
     <CopyFileToFolders Include="effects\FSR.hlsl">
       <Filter>效果</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\RCAS.hlsl">
+      <Filter>效果</Filter>
+    </CopyFileToFolders>
     <CopyFileToFolders Include="effects\Jinc.hlsl">
       <Filter>效果</Filter>
     </CopyFileToFolders>
