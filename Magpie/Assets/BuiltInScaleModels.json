@@ -1,31 +1,145 @@
 [
   {
-    "name": "Lanczos",
+    "name": "ACNet",
     "effects": [
       {
-        "effect": "Lanczos",
-        "scale": [ -1, -1 ]
+        "effect": "ACNet"
       },
       {
-        "effect": "AdaptiveSharpen",
-        "curveHeight": 0.3
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
       }
     ]
   },
   {
-    "name": "FSR",
+    "name": "ACNet (RCAS)",
     "effects": [
       {
-        "effect": "FSR",
-        "scale": [ -1, -1 ]
+        "effect": "RCAS",
+        "sharpness": 0.5
+      },
+      {
+        "effect": "ACNet"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
       }
     ]
   },
   {
-    "name": "FSRCNNX",
+    "name": "ACNet (RCAS Sharp)",
     "effects": [
       {
-        "effect": "FSRCNNX"
+        "effect": "RCAS",
+        "sharpness": 0.87
+      },
+      {
+        "effect": "ACNet"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "ANime4k",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_L"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "ANime4k (RCAS)",
+    "effects": [
+      {
+        "effect": "RCAS",
+        "sharpness": 0.5
+      },
+      {
+        "effect": "Anime4K_Upscale_L"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "Anime4K (Denoise)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_Denoise_L"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "Anime4K (Denoise+RCAS)",
+    "effects": [
+      {
+        "effect": "RCAS",
+        "sharpness": 0.5
+      },
+      {
+        "effect": "Anime4K_Upscale_Denoise_L"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "ANime4k (Restore)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_L"
+      },
+      {
+        "effect": "Anime4K_Restore_M"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "FSRCNNXLineArt (SSim)",
+    "effects": [
+      {
+        "effect": "FSRCNNX_LineArt"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "FSRCNNXLineArt (CatRom)",
+    "effects": [
+      {
+        "effect": "FSRCNNX_LineArt"
       },
       {
         "effect": "Mitchell",
@@ -35,7 +149,33 @@
     ]
   },
   {
-    "name": "ACNet",
+    "name": "FSRCNNXLineArt (RCAS)",
+    "effects": [
+      {
+        "effect": "RCAS",
+        "sharpness": 0.3
+      },
+      {
+        "effect": "FSRCNNX_LineArt"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "FidelityFX Super Resolution",
+    "effects": [
+      {
+        "effect": "FSR",
+        "scale": [ -1, -1 ]
+      }
+    ]
+  },
+  {
+    "name": "ACNet (CatRom)",
     "effects": [
       {
         "effect": "ACNet"
@@ -48,15 +188,28 @@
     ]
   },
   {
-    "name": "Anime4K",
+    "name": "Anime4K (CatRom)",
     "effects": [
       {
-        "effect": "Anime4K_Upscale_Denoise_L"
+        "effect": "Anime4K_Upscale_L"
       },
       {
         "effect": "Mitchell",
         "scale": [ -1, -1 ],
         "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "Lanczos",
+    "effects": [
+      {
+        "effect": "Lanczos",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "AdaptiveSharpen",
+        "curveHeight": 0.3
       }
     ]
   },
