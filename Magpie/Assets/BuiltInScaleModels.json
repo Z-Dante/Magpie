@@ -213,9 +213,37 @@
       },
       {
         "effect": "AdaptiveSharpen",
-        "curveHeight": 0.3
-    },
-    {
+        "curveHeight": 0.3  
+      }
+    ]
+  },
+  {
+    "name": "Anime4K (Light)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_S"
+      },
+      {
+        "effect": "Mitchell",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "Anime4K (Very Light)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_S_Lite"
+      },
+      {
+        "effect": "Mitchell_Lite",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
     "name": "RAVU",
     "effects": [
       {
