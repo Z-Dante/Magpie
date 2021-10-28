@@ -205,19 +205,6 @@
     ]
   },
   {
-    "name": "Lanczos",
-    "effects": [
-      {
-        "effect": "Lanczos",
-        "scale": [ -1, -1 ]
-      },
-      {
-        "effect": "AdaptiveSharpen",
-        "curveHeight": 0.3  
-      }
-    ]
-  },
-  {
     "name": "Anime4K (Light)",
     "effects": [
       {
@@ -240,6 +227,19 @@
         "effect": "Mitchell_Lite",
         "scale": [ -1, -1 ],
         "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "Lanczos",
+    "effects": [
+      {
+        "effect": "Lanczos",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "AdaptiveSharpen",
+        "curveHeight": 0.3  
       }
     ]
   },
