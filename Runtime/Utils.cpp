@@ -6,22 +6,28 @@
 
 
 bool Utils::ReadFile(const wchar_t* fileName, std::vector<BYTE>& result) {
-	FILE* hFile;
-	if (_wfopen_s(&hFile, fileName, L"rb") || !hFile) {
-		SPDLOG_LOGGER_ERROR(logger, fmt::format("打开文件{}失败", StrUtils::UTF16ToUTF8(fileName)));
+	SPDLOG_LOGGER_INFO(logger, fmt::format("读取文件：{}", StrUtils::UTF16ToUTF8(fileName)));
+
+#if (_WIN32_WINNT >= _WIN32_WINNT_WIN8)
+	ScopedHandle hFile(SafeHandle(CreateFile2(fileName, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, nullptr)));
+#else
+	ScopedHandle hFile(SafeHandle(CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, nullptr)));
+#endif
+
+	if (!hFile) {
+		SPDLOG_LOGGER_ERROR(logger, "打开文件失败");
+		return false;
+	}
+	
+	DWORD size = GetFileSize(hFile.get(), nullptr);
+	result.resize(size);
+
+	DWORD readed;
+	if (!::ReadFile(hFile.get(), result.data(), size, &readed, nullptr)) {
+		SPDLOG_LOGGER_ERROR(logger, "读取文件失败");
 		return false;
 	}
 
-	// 获取文件长度
-	int fd = _fileno(hFile);
-	long size = _filelength(fd);
-
-	result.resize(size);
-
-	size_t readed = fread(result.data(), 1, size, hFile);
-	assert(readed == size);
-
-	fclose(hFile);
 	return true;
 }
 

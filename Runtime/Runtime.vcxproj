@@ -176,6 +176,7 @@
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="StrUtils.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="TextureLoader.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="GraphicsCaptureFrameSource.h" />
   </ItemGroup>
@@ -196,6 +197,7 @@
     <ClCompile Include="DwmSharedSurfaceFrameSource.cpp" />
     <ClCompile Include="StepTimer.cpp" />
     <ClCompile Include="StrUtils.cpp" />
+    <ClCompile Include="TextureLoader.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="GraphicsCaptureFrameSource.cpp" />
   </ItemGroup>
@@ -216,12 +218,6 @@
       <FileType>Document</FileType>
     </CopyFileToFolders>
     <CopyFileToFolders Include="effects\AdaptiveSharpen.hlsl">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="effects\FSR.hlsl">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="effects\RCAS.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
     <CopyFileToFolders Include="effects\Jinc.hlsl">
@@ -245,7 +241,7 @@
     <CopyFileToFolders Include="effects\FSRCNNX_LineArt.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="effects\RAVU_Lite.hlsl">
+    <CopyFileToFolders Include="effects\RAVU_Lite_R3.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
     <CopyFileToFolders Include="effects\SSimDownscaler.hlsl">
@@ -281,6 +277,42 @@
     <CopyFileToFolders Include="effects\Linear.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\FSR_EASU.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\FSR_RCAS.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\Mitchell_Lite.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\Anime4K_Upscale_S_Lite.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\RAVU_R3.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_2x.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_3x.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_Freescale.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_Freescale_Multipass.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_4x.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_5x.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="effects\xBRZ_6x.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <FxCompile Include="shaders\CopyPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -300,6 +332,12 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="conanfile.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="effects\RAVU_R3_Weights.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="effects\RAVU_Lite_R3_Weights.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -16,7 +16,7 @@
     "name": "ACNet (RCAS)",
     "effects": [
       {
-        "effect": "RCAS",
+        "effect": "FSR_RCAS",
         "sharpness": 0.5
       },
       {
@@ -33,7 +33,7 @@
     "name": "ACNet (RCAS Sharp)",
     "effects": [
       {
-        "effect": "RCAS",
+        "effect": "FSR_RCAS",
         "sharpness": 0.87
       },
       {
@@ -63,7 +63,7 @@
     "name": "ANime4k (RCAS)",
     "effects": [
       {
-        "effect": "RCAS",
+        "effect": "FSR_RCAS",
         "sharpness": 0.5
       },
       {
@@ -93,7 +93,7 @@
     "name": "Anime4K (Denoise+RCAS)",
     "effects": [
       {
-        "effect": "RCAS",
+        "effect": "FSR_RCAS",
         "sharpness": 0.5
       },
       {
@@ -152,7 +152,7 @@
     "name": "FSRCNNXLineArt (RCAS)",
     "effects": [
       {
-        "effect": "RCAS",
+        "effect": "FSR_RCAS",
         "sharpness": 0.3
       },
       {
@@ -169,8 +169,12 @@
     "name": "FidelityFX Super Resolution",
     "effects": [
       {
-        "effect": "FSR",
+        "effect": "FSR_EASU",
         "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.87
       }
     ]
   },
@@ -210,6 +214,13 @@
       {
         "effect": "AdaptiveSharpen",
         "curveHeight": 0.3
+    },
+    {
+    "name": "RAVU",
+    "effects": [
+      {
+        "effect": "RAVU_R3",
+        "scale": [-1, -1]
       }
     ]
   },

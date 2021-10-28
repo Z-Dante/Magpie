@@ -13,11 +13,6 @@
 extern std::shared_ptr<spdlog::logger> logger;
 
 
-
-Renderer::~Renderer() {
-	CloseHandle(_frameLatencyWaitableObject);
-}
-
 bool Renderer::Initialize() {
 	if (!_InitD3D()) {
 		return false;
@@ -187,7 +182,6 @@ bool Renderer::_InitD3D() {
 
 		ComPtr<ID3D11Device> d3dDevice;
 		ComPtr<ID3D11DeviceContext> d3dDC;
-		D3D_FEATURE_LEVEL featureLevel;
 		hr = D3D11CreateDevice(
 			nullptr,
 			D3D_DRIVER_TYPE_HARDWARE,
@@ -197,14 +191,33 @@ bool Renderer::_InitD3D() {
 			1,
 			D3D11_SDK_VERSION,
 			&d3dDevice,
-			&featureLevel,
+			&_featureLevel,
 			&d3dDC
 		);
 		if (FAILED(hr)) {
 			SPDLOG_LOGGER_CRITICAL(logger, MakeComErrorMsg("D3D11CreateDevice 失败", hr));
 			return false;
 		}
-		SPDLOG_LOGGER_INFO(logger, fmt::format("已创建 D3D Device\n\t功能级别：{}", featureLevel));
+
+		std::string_view fl;
+		switch (_featureLevel) {
+		case D3D_FEATURE_LEVEL_10_0:
+			fl = "10.0";
+			break;
+		case D3D_FEATURE_LEVEL_10_1:
+			fl = "10.1";
+			break;
+		case D3D_FEATURE_LEVEL_11_0:
+			fl = "11.0";
+			break;
+		case D3D_FEATURE_LEVEL_11_1:
+			fl = "11.1";
+			break;
+		default:
+			fl = "未知";
+			break;
+		}
+		SPDLOG_LOGGER_INFO(logger, fmt::format("已创建 D3D Device\n\t功能级别：{}", fl));
 
 		hr = d3dDevice.As<ID3D11Device1>(&_d3dDevice);
 		if (FAILED(hr)) {
@@ -306,7 +319,11 @@ bool Renderer::_InitD3D() {
 				SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("SetMaximumFrameLatency 失败", hr));
 			}
 		} else {
-			_frameLatencyWaitableObject = _dxgiSwapChain->GetFrameLatencyWaitableObject();
+			_frameLatencyWaitableObject.reset(_dxgiSwapChain->GetFrameLatencyWaitableObject());
+			if (!_frameLatencyWaitableObject) {
+				SPDLOG_LOGGER_ERROR(logger, "GetFrameLatencyWaitableObject 失败");
+				return false;
+			}
 		}
 		
 		hr = dxgiFactory->MakeWindowAssociation(App::GetInstance().GetHwndHost(), DXGI_MWA_NO_ALT_ENTER);
@@ -363,7 +380,7 @@ void Renderer::_Render() {
 	int frameRate = App::GetInstance().GetFrameRate();
 
 	if (!_waitingForNextFrame && frameRate == 0) {
-		WaitForSingleObjectEx(_frameLatencyWaitableObject, 1000, TRUE);
+		WaitForSingleObjectEx(_frameLatencyWaitableObject.get(), 1000, TRUE);
 	}
 
 	if (!_CheckSrcState()) {

@@ -116,7 +116,7 @@ void serialize(Archive& ar, EffectValueConstantDesc& o) {
 
 template<typename Archive>
 void serialize(Archive& ar, EffectIntermediateTextureDesc& o) {
-	ar& o.format& o.name& o.sizeExpr;
+	ar& o.format& o.name & o.source & o.sizeExpr;
 }
 
 template<typename Archive>
@@ -252,8 +252,8 @@ void EffectCache::Save(const wchar_t* fileName, std::string_view hash, const Eff
 				Utils::Hasher::GetInstance().GetHashLength() * 2, _SUFFIX), std::wregex::optimize | std::wregex::nosubs);
 
 		WIN32_FIND_DATA findData;
-		HANDLE hFind = FindFirstFile(L".\\cache\\*", &findData);
-		if (hFind != INVALID_HANDLE_VALUE) {
+		HANDLE hFind = Utils::SafeHandle(FindFirstFile(L".\\cache\\*", &findData));
+		if (hFind) {
 			while (FindNextFile(hFind, &findData)) {
 				if (lstrlenW(findData.cFileName) < 8) {
 					continue;
