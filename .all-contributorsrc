@@ -1,0 +1,76 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "Blinue",
+      "name": "刘旭",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34770031?v=4",
+      "profile": "https://github.com/Blinue",
+      "contributions": [
+        "maintenance",
+        "code",
+        "review",
+        "doc",
+        "question"
+      ]
+    },
+    {
+      "login": "hooke007",
+      "name": "hooke007",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41094733?v=4",
+      "profile": "https://github.com/hooke007",
+      "contributions": [
+        "doc",
+        "question",
+        "userTesting"
+      ]
+    },
+    {
+      "login": "palxex",
+      "name": "Pal Lockheart",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58222?v=4",
+      "profile": "http://palxex.ys168.com",
+      "contributions": [
+        "userTesting"
+      ]
+    },
+    {
+      "login": "neoKushan",
+      "name": "Steve Donaghy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1029699?v=4",
+      "profile": "https://www.stevedonaghy.com/",
+      "contributions": [
+        "code",
+        "translation"
+      ]
+    },
+    {
+      "login": "JeffersonQin",
+      "name": "gyro永不抽风",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30655701?v=4",
+      "profile": "http://gyrojeff.top",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "ButtERRbrod",
+      "name": "ButtERRbrod",
+      "avatar_url": "https://avatars.githubusercontent.com/u/89013889?v=4",
+      "profile": "https://github.com/ButtERRbrod",
+      "contributions": [
+        "translation"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "Magpie",
+  "projectOwner": "Blinue",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
