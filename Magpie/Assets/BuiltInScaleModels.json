@@ -77,27 +77,18 @@
     ]
   },
   {
-    "name": "Anime4K (Denoise)",
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_Denoise_L"
-      },
-      {
-        "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
-  {
     "name": "Anime4K (Denoise+RCAS)",
     "effects": [
       {
         "effect": "FSR_RCAS",
-        "sharpness": 0.5
+        "sharpness": 0.3
       },
       {
         "effect": "Anime4K_Upscale_Denoise_L"
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.2
       },
       {
         "effect": "SSimDownscaler",
@@ -136,19 +127,6 @@
     ]
   },
   {
-    "name": "FSRCNNXLineArt (CatRom)",
-    "effects": [
-      {
-        "effect": "FSRCNNX_LineArt"
-      },
-      {
-        "effect": "Mitchell",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
-  {
     "name": "FSRCNNXLineArt (RCAS)",
     "effects": [
       {
@@ -179,23 +157,26 @@
     ]
   },
   {
-    "name": "ACNet (CatRom)",
+    "name": "FXAA + FSR",
     "effects": [
       {
-        "effect": "ACNet"
+        "effect": "FXAA"
       },
       {
-        "effect": "Mitchell",
-        "scale": [ -1, -1 ],
-        "variant": 1
+        "effect": "FSR_EASU",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.87
       }
     ]
   },
   {
-    "name": "Anime4K (CatRom)",
+    "name": "ACNet (CatRom)",
     "effects": [
       {
-        "effect": "Anime4K_Upscale_L"
+        "effect": "ACNet"
       },
       {
         "effect": "Mitchell",
@@ -244,20 +225,11 @@
     ]
   },
   {
-    "name": "RAVU",
+    "name": "xBRZ Freescale Multipass",
     "effects": [
       {
-        "effect": "RAVU_Zoom_R3",
-        "scale": [-1, -1]
-      }
-    ]
-  },
-  {
-    "name": "Integer Scale 2x",
-    "effects": [
-      {
-        "effect": "Nearest",
-        "scale": [ 2, 2 ]
+        "effect": "xBRZ_Freescale_Multipass",
+        "scale": [ -1, -1 ] 
       }
     ]
   }
