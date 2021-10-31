@@ -113,8 +113,34 @@
       }
     ]
   },
+    {
+    "name": "Anime4K (Light)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_S"
+      },
+      {
+        "effect": "Mitchell",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
   {
-    "name": "FSRCNNXLineArt (SSim)",
+    "name": "Anime4K (Very Light)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_S_Lite"
+      },
+      {
+        "effect": "Mitchell_Lite",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "FSRCNNXLineArt",
     "effects": [
       {
         "effect": "FSRCNNX_LineArt"
@@ -153,61 +179,6 @@
       {
         "effect": "FSR_RCAS",
         "sharpness": 0.87
-      }
-    ]
-  },
-  {
-    "name": "FXAA + FSR",
-    "effects": [
-      {
-        "effect": "FXAA"
-      },
-      {
-        "effect": "FSR_EASU",
-        "scale": [ -1, -1 ]
-      },
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.87
-      }
-    ]
-  },
-  {
-    "name": "ACNet (CatRom)",
-    "effects": [
-      {
-        "effect": "ACNet"
-      },
-      {
-        "effect": "Mitchell",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
-  {
-    "name": "Anime4K (Light)",
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_S"
-      },
-      {
-        "effect": "Mitchell",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
-  {
-    "name": "Anime4K (Very Light)",
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_S_Lite"
-      },
-      {
-        "effect": "Mitchell_Lite",
-        "scale": [ -1, -1 ],
-        "variant": 1
       }
     ]
   },
