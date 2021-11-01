@@ -31,6 +31,7 @@ namespace Magpie {
 			public volatile IntPtr hwndSrc;
 			public volatile int captureMode;
 			public volatile string effectsJson;
+			public volatile bool noCursor;
 			public volatile bool adjustCursorSpeed;
 			public volatile bool showFPS;
 			public volatile bool disableRoundCorner;
@@ -64,8 +65,17 @@ namespace Magpie {
 					}
 				}
 
+				bool initSuccess = false;
+				try {
+					initSuccess = NativeMethods.Initialize(ResolveLogLevel(Settings.Default.LoggingLevel));
+					if (!initSuccess) {
+						Logger.Error("Initialize 失败");
+					}
+				} catch (Exception e) {
+					Logger.Error(e, "Initialize 失败");
+				}
 
-				if (!NativeMethods.Initialize(ResolveLogLevel(Settings.Default.LoggingLevel))) {
+				if (!initSuccess) {
 					// 初始化失败
 					CloseEvent("Msg_Error_Init");
 					parent.Dispatcher.Invoke(() => {
@@ -88,6 +98,7 @@ namespace Magpie {
 							magWindowParams.hwndSrc,
 							magWindowParams.effectsJson,
 							magWindowParams.captureMode,
+							magWindowParams.noCursor,
 							magWindowParams.adjustCursorSpeed,
 							magWindowParams.showFPS,
 							magWindowParams.disableRoundCorner,
@@ -129,6 +140,7 @@ namespace Magpie {
 			string effectsJson,
 			int captureMode,
 			bool showFPS,
+			bool noCursor,
 			bool adjustCursorSpeed,
 			bool disableRoundCorner,
 			int frameRate
@@ -154,6 +166,7 @@ namespace Magpie {
 			magWindowParams.captureMode = captureMode;
 			magWindowParams.effectsJson = effectsJson;
 			magWindowParams.showFPS = showFPS;
+			magWindowParams.noCursor = noCursor;
 			magWindowParams.adjustCursorSpeed = adjustCursorSpeed;
 			magWindowParams.disableRoundCorner = disableRoundCorner;
 			magWindowParams.frameRateOrLogLevel = frameRate;

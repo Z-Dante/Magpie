@@ -19,6 +19,7 @@ public:
 		HWND hwndSrc,
 		const std::string& effectsJson,
 		int captureMode,
+		bool noCursor,
 		bool adjustCursorSpeed,
 		bool showFPS,
 		bool disableRoundCorner,
@@ -53,6 +54,10 @@ public:
 		return *_frameSource;
 	}
 
+	bool IsNoCursor() const {
+		return _noCursor;
+	}
+
 	bool IsAdjustCursorSpeed() const {
 		return _adjustCursorSpeed;
 	}
@@ -78,6 +83,8 @@ public:
 	}
 
 	ComPtr<IWICImagingFactory2> GetWICImageFactory();
+
+	bool RegisterTimer(UINT uElapse, std::function<void()> cb);
 
 private:
 	App() {}
@@ -109,6 +116,7 @@ private:
 	RECT _srcClientRect{};
 
 	int _captureMode = 0;
+	bool _noCursor = false;
 	bool _adjustCursorSpeed = false;
 	bool _showFPS = false;
 	int _frameRate = 0;
@@ -116,4 +124,8 @@ private:
 	std::unique_ptr<Renderer> _renderer;
 	std::unique_ptr<FrameSourceBase> _frameSource;
 	ComPtr<IWICImagingFactory2> _wicImgFactory;
+
+	UINT _nextTimerId = 1;
+	// 存储所有计时器回调
+	std::vector<std::function<void()>> _timerCbs;
 };
