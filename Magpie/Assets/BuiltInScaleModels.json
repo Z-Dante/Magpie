@@ -104,7 +104,7 @@
         "effect": "Anime4K_Upscale_L"
       },
       {
-        "effect": "Anime4K_Restore_M"
+        "effect": "Anime4K_Restore_VL"
       },
       {
         "effect": "SSimDownscaler",
@@ -113,7 +113,7 @@
       }
     ]
   },
-    {
+  {
     "name": "Anime4K (Light)",
     "effects": [
       {
@@ -201,6 +201,38 @@
       {
         "effect": "xBRZ_Freescale_Multipass",
         "scale": [ -1, -1 ] 
+      }
+    ]
+  },
+  {
+    "name": "ANime4k + FSR",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_L"
+      },
+      {
+        "effect": "FSR_EASU",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.7
+      }
+    ]
+  },
+  {
+    "name": "ANime4k Denoise + FSR",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_Denoise_L"
+      },
+      {
+        "effect": "FSR_EASU",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.7
       }
     ]
   }
