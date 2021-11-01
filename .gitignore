@@ -387,3 +387,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+Runtime/shaders/SimpleVS.h
+Runtime/shaders/MonochromeCursorPS.h
+Runtime/shaders/FillVS.h
+Runtime/shaders/CopyPS.h
