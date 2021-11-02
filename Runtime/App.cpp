@@ -18,27 +18,27 @@ App::~App() {
 }
 
 bool App::Initialize(HINSTANCE hInst) {
-	SPDLOG_LOGGER_INFO(logger, "正在初始化 App");
+	SPDLOG_LOGGER_INFO(logger, "Initializing App");
 
 	_hInst = hInst;
 
 	// 初始化 COM
 	HRESULT hr = Windows::Foundation::Initialize(RO_INIT_MULTITHREADED);
 	if (FAILED(hr)) {
-		SPDLOG_LOGGER_CRITICAL(logger, MakeComErrorMsg("初始化 COM 失败", hr));
+		SPDLOG_LOGGER_CRITICAL(logger, MakeComErrorMsg("Initialize COM Failed", hr));
 		return false;
 	}
-	SPDLOG_LOGGER_INFO(logger, "已初始化 COM");
+	SPDLOG_LOGGER_INFO(logger, "COM initialized");
 
 	// 注册主窗口类
 	_RegisterHostWndClass();
 
 	// 供隐藏光标和 MagCallback 抓取模式使用
 	if (!MagInitialize()) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("MagInitialize 失败"));
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("MagInitialize Failure"));
 	}
 
-	SPDLOG_LOGGER_INFO(logger, "App 初始化成功");
+	SPDLOG_LOGGER_INFO(logger, "App Initialization successful");
 	return true;
 }
 
@@ -68,21 +68,21 @@ bool App::Run(
 
 	_srcClientRect = Utils::GetClientScreenRect(_hwndSrc);
 	if (_srcClientRect.right == 0 || _srcClientRect.bottom == 0) {
-		SPDLOG_LOGGER_CRITICAL(logger, "获取源窗口客户区失败");
+		SPDLOG_LOGGER_CRITICAL(logger, "Failed to get source window");
 		return false;
 	}
 
-	SPDLOG_LOGGER_INFO(logger, fmt::format("源窗口客户区尺寸：{}x{}",
+	SPDLOG_LOGGER_INFO(logger, fmt::format("Source window size：{}x{}",
 		_srcClientRect.right - _srcClientRect.left, _srcClientRect.bottom - _srcClientRect.top));
 
 	if (!_CreateHostWnd()) {
-		SPDLOG_LOGGER_CRITICAL(logger, "创建主窗口失败");
+		SPDLOG_LOGGER_CRITICAL(logger, "Failed to create main window");
 		return false;
 	}
 
 	_renderer.reset(new Renderer());
 	if (!_renderer->Initialize()) {
-		SPDLOG_LOGGER_CRITICAL(logger, "初始化 Renderer 失败，正在清理");
+		SPDLOG_LOGGER_CRITICAL(logger, "Failed to initialize Renderer, cleaning up");
 		DestroyWindow(_hwndHost);
 		_Run();
 		return false;
@@ -102,21 +102,21 @@ bool App::Run(
 		_frameSource.reset(new GDIFrameSource());
 		break;
 	default:
-		SPDLOG_LOGGER_CRITICAL(logger, "未知的捕获模式，即将退出");
+		SPDLOG_LOGGER_CRITICAL(logger, "Unknown capture mode, terminating");
 		DestroyWindow(_hwndHost);
 		_Run();
 		return false;
 	}
 	
 	if (!_frameSource->Initialize()) {
-		SPDLOG_LOGGER_CRITICAL(logger, "初始化 FrameSource 失败，即将退出");
+		SPDLOG_LOGGER_CRITICAL(logger, "Failed to initialize FrameSource, terminating");
 		DestroyWindow(_hwndHost);
 		_Run();
 		return false;
 	}
 
 	if (!_renderer->InitializeEffectsAndCursor(effectsJson)) {
-		SPDLOG_LOGGER_CRITICAL(logger, "初始化效果失败，即将退出");
+		SPDLOG_LOGGER_CRITICAL(logger, "Failed to initialize effect, terminating");
 		DestroyWindow(_hwndHost);
 		_Run();
 		return false;
@@ -134,9 +134,9 @@ bool App::Run(
 			INT attr = DWMWCP_DONOTROUND;
 			HRESULT hr = DwmSetWindowAttribute(hwndSrc, DWMWA_WINDOW_CORNER_PREFERENCE, &attr, sizeof(attr));
 			if (FAILED(hr)) {
-				SPDLOG_LOGGER_ERROR(logger, "禁用窗口圆角失败");
+				SPDLOG_LOGGER_ERROR(logger, "Failed to disable rounded window corners");
 			} else {
-				SPDLOG_LOGGER_INFO(logger, "已禁用窗口圆角");
+				SPDLOG_LOGGER_INFO(logger, "Rounded window corners has been undisabled");
 				roundCornerDisabled = true;
 			}
 		}
@@ -148,9 +148,9 @@ bool App::Run(
 		INT attr = DWMWCP_DEFAULT;
 		HRESULT hr = DwmSetWindowAttribute(hwndSrc, DWMWA_WINDOW_CORNER_PREFERENCE, &attr, sizeof(attr));
 		if (FAILED(hr)) {
-			SPDLOG_LOGGER_INFO(logger, "取消禁用窗口圆角失败");
+			SPDLOG_LOGGER_INFO(logger, "Failed to disable rounded window corners");
 		} else {
-			SPDLOG_LOGGER_INFO(logger, "已取消禁用窗口圆角");
+			SPDLOG_LOGGER_INFO(logger, "Rounded window corners has been undisabled");
 		}
 	}
 	
@@ -158,7 +158,7 @@ bool App::Run(
 }
 
 void App::_Run() {
-	SPDLOG_LOGGER_INFO(logger, "开始接收窗口消息");
+	SPDLOG_LOGGER_INFO(logger, "Started receiving window information");
 
 	while (true) {
 		MSG msg;
@@ -166,7 +166,7 @@ void App::_Run() {
 			if (msg.message == WM_QUIT) {
 				// 释放资源
 				_ReleaseResources();
-				SPDLOG_LOGGER_INFO(logger, "主窗口已销毁");
+				SPDLOG_LOGGER_INFO(logger, "Main window destroyed");
 				return;
 			}
 
@@ -188,7 +188,7 @@ ComPtr<IWICImagingFactory2> App::GetWICImageFactory() {
         );
 
 		if (FAILED(hr)) {
-			SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 WICImagingFactory 失败", hr));
+			SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("Failed to create WICImagingFactory", hr));
 			return nullptr;
 		}
     }
@@ -198,7 +198,7 @@ ComPtr<IWICImagingFactory2> App::GetWICImageFactory() {
 
 bool App::RegisterTimer(UINT uElapse, std::function<void()> cb) {
 	if (!SetTimer(_hwndHost, _nextTimerId, uElapse, nullptr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetTimer 失败"));
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetTimer Failed"));
 		return false;
 	}
 
@@ -218,16 +218,16 @@ void App::_RegisterHostWndClass() const {
 
 	if (!RegisterClassEx(&wcex)) {
 		// 忽略此错误，因为可能是重复注册产生的错误
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("注册主窗口类失败"));
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("Failed to register main window class"));
 	} else {
-		SPDLOG_LOGGER_INFO(logger, "已注册主窗口类");
+		SPDLOG_LOGGER_INFO(logger, "Main Window Class Registered");
 	}
 }
 
 // 创建主窗口
 bool App::_CreateHostWnd() {
 	if (FindWindow(_HOST_WINDOW_CLASS_NAME, nullptr)) {
-		SPDLOG_LOGGER_CRITICAL(logger, "已存在主窗口");
+		SPDLOG_LOGGER_CRITICAL(logger, "Main window already exists");
 		return false;
 	}
 
@@ -248,22 +248,22 @@ bool App::_CreateHostWnd() {
 		NULL
 	);
 	if (!_hwndHost) {
-		SPDLOG_LOGGER_CRITICAL(logger, MakeWin32ErrorMsg("创建主窗口失败"));
+		SPDLOG_LOGGER_CRITICAL(logger, MakeWin32ErrorMsg("Failed to create main window"));
 		return false;
 	}
 
-	SPDLOG_LOGGER_INFO(logger, fmt::format("主窗口尺寸：{}x{}", _hostWndSize.cx, _hostWndSize.cy));
+	SPDLOG_LOGGER_INFO(logger, fmt::format("Main Window Dimensions：{}x{}", _hostWndSize.cx, _hostWndSize.cy));
 
 	// 设置窗口不透明
 	if (!SetLayeredWindowAttributes(_hwndHost, 0, 255, LWA_ALPHA)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetLayeredWindowAttributes 失败"));
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetLayeredWindowAttributes Failure"));
 	}
 
 	if (!ShowWindow(_hwndHost, SW_NORMAL)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("ShowWindow 失败"));
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("ShowWindow Failure"));
 	}
 
-	SPDLOG_LOGGER_INFO(logger, "已创建主窗口");
+	SPDLOG_LOGGER_INFO(logger, "Main window created");
 	return true;
 }
 
@@ -274,7 +274,7 @@ LRESULT App::_HostWndProcStatic(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	if (message == _WM_DESTORYHOST) {
-		SPDLOG_LOGGER_INFO(logger, "收到 MAGPIE_WM_DESTORYHOST 消息，即将销毁主窗口");
+		SPDLOG_LOGGER_INFO(logger, "Received MAGPIE_WM_DESTORYHOST message, main window will be destroyed soon");
 		DestroyWindow(_hwndHost);
 		return 0;
 	}
