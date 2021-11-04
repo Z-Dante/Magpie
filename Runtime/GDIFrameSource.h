@@ -8,7 +8,7 @@ public:
 	GDIFrameSource() {};
 	virtual ~GDIFrameSource() {}
 
-	bool Initialize(SIZE& frameSize) override;
+	bool Initialize() override;
 
 	ComPtr<ID3D11Texture2D> GetOutput() override;
 
@@ -27,7 +27,7 @@ private:
 	RECT _srcClientRect{};
 	SIZE _srcClientSize{};
 	RECT _srcWndRect{};
-	SIZE _srcWndSize{};
+	SIZE _frameSize{};
 
 	std::vector<BYTE> _pixels;
 };

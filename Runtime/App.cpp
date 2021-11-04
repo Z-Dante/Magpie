@@ -109,7 +109,7 @@ bool App::Run(
 	}
 	
 
-	if (!_frameSource->Initialize(_srcFrameSize)) {
+	if (!_frameSource->Initialize()) {
 		SPDLOG_LOGGER_CRITICAL(logger, "Failed to initialize FrameSource, terminating");
 		DestroyWindow(_hwndHost);
 		_Run();
