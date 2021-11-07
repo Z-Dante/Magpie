@@ -65,6 +65,8 @@ namespace Magpie {
 			}
 			cbbScaleMode.SelectedIndex = Settings.Default.ScaleMode;
 
+			ShowAllCaptureMethods(Settings.Default.DebugShowAllCaptureMethods);
+
 			// 延迟绑定，防止加载时改变设置
 			cbbScaleMode.SelectionChanged += CbbScaleMode_SelectionChanged;
 		}
@@ -182,12 +184,6 @@ namespace Magpie {
 			}
 
 			string effectsJson = scaleModelManager.GetScaleModels()[Settings.Default.ScaleMode].Effects;
-			bool showFPS = Settings.Default.ShowFPS;
-			int captureMode = Settings.Default.CaptureMode;
-			bool noCursor = Settings.Default.NoCursor;
-			bool adjustCursorSpeed = Settings.Default.AdjustCursorSpeed;
-			bool disableRoundCorner = Settings.Default.DisableRoundCorner;
-			bool disableLowLatency = Settings.Default.DisableLowLatency;
 
 			int frameRate = 0;
 			switch (Settings.Default.FrameRateType) {
@@ -206,13 +202,15 @@ namespace Magpie {
 
 			magWindow.Create(
 				effectsJson,
-				captureMode,
-				showFPS,
-				noCursor,
-				adjustCursorSpeed,
-				disableRoundCorner,
+				Settings.Default.CaptureMode,
+				Settings.Default.ShowFPS,
+				Settings.Default.NoCursor,
+				Settings.Default.AdjustCursorSpeed,
+				Settings.Default.DisableRoundCorner,
+				Settings.Default.DisableWindowResizing,
 				frameRate,
-				disableLowLatency
+				Settings.Default.DisableLowLatency,
+				Settings.Default.DebugBreakpointMode
 			);
 
 			prevSrcWindow = magWindow.SrcWindow;
@@ -349,6 +347,31 @@ namespace Magpie {
 
 		private void Window_Deactivated(object sender, EventArgs e) {
 			Settings.Default.Save();
+		}
+
+		public void ShowAllCaptureMethods(bool isShow) {
+			if (isShow) {
+				if (cbbCaptureMethod.Items.Count != 3) {
+					return;
+				}
+
+				_ = cbbCaptureMethod.Items.Add(new ComboBoxItem {
+					Content = "Legacy GDI"
+				});
+				_ = cbbCaptureMethod.Items.Add(new ComboBoxItem {
+					Content = "MagCallback"
+				});
+			} else {
+				if (cbbCaptureMethod.Items.Count != 5) {
+					return;
+				}
+
+				if (cbbCaptureMethod.SelectedIndex >= 3) {
+					cbbCaptureMethod.SelectedIndex = 0;
+				}
+				cbbCaptureMethod.Items.RemoveAt(4);
+				cbbCaptureMethod.Items.RemoveAt(3);
+			}
 		}
 	}
 

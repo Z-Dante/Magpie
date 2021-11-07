@@ -226,5 +226,41 @@ namespace Magpie.Properties {
                 this["CursorZoomFactor"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DebugShowAllCaptureMethods {
+            get {
+                return ((bool)(this["DebugShowAllCaptureMethods"]));
+            }
+            set {
+                this["DebugShowAllCaptureMethods"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DebugBreakpointMode {
+            get {
+                return ((bool)(this["DebugBreakpointMode"]));
+            }
+            set {
+                this["DebugBreakpointMode"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DisableWindowResizing {
+            get {
+                return ((bool)(this["DisableWindowResizing"]));
+            }
+            set {
+                this["DisableWindowResizing"] = value;
+            }
+        }
     }
 }

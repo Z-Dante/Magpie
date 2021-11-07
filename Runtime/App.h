@@ -19,12 +19,8 @@ public:
 		HWND hwndSrc,
 		const std::string& effectsJson,
 		int captureMode,
-		bool noCursor,
-		bool adjustCursorSpeed,
-		bool showFPS,
-		bool disableRoundCorner,
 		int frameRate,
-		bool disableLowLatency
+		UINT flags
 	);
 
 	HINSTANCE GetHInstance() const {
@@ -55,18 +51,6 @@ public:
 		return *_frameSource;
 	}
 
-	bool IsNoCursor() const {
-		return _noCursor;
-	}
-
-	bool IsAdjustCursorSpeed() const {
-		return _adjustCursorSpeed;
-	}
-
-	bool IsShowFPS() const {
-		return _showFPS;
-	}
-
 	int GetCaptureMode() const {
 		return _captureMode;
 	}
@@ -75,8 +59,32 @@ public:
 		return _frameRate;
 	}
 
+	bool IsNoCursor() const {
+		return _flags & (UINT)_FlagMasks::NoCursor;
+	}
+
+	bool IsAdjustCursorSpeed() const {
+		return _flags & (UINT)_FlagMasks::AdjustCursorSpeed;
+	}
+
+	bool IsShowFPS() const {
+		return _flags & (UINT)_FlagMasks::ShowFPS;
+	}
+
 	bool IsDisableLowLatency() const {
-		return _disableLowLatency;
+		return _flags & (UINT)_FlagMasks::DisableLowLatency;
+	}
+
+	bool IsDisableRoundCorner() const {
+		return _flags & (UINT)_FlagMasks::DisableRoundCorner;
+	}
+
+	bool IsDisableWindowResizing() const {
+		return _flags & (UINT)_FlagMasks::DisableWindowResizing;
+	}
+
+	bool IsBreakpointMode() const {
+		return _flags & (UINT)_FlagMasks::BreakpointMode;
 	}
 
 	const char* GetErrorMsg() const {
@@ -121,11 +129,18 @@ private:
 	RECT _srcClientRect{};
 
 	int _captureMode = 0;
-	bool _noCursor = false;
-	bool _adjustCursorSpeed = false;
-	bool _showFPS = false;
 	int _frameRate = 0;
-	bool _disableLowLatency = false;
+	UINT _flags = 0;
+
+	enum class _FlagMasks : UINT {
+		NoCursor = 0x1,
+		AdjustCursorSpeed = 0x2,
+		ShowFPS = 0x4,
+		DisableRoundCorner = 0x8,
+		DisableLowLatency = 0x10,
+		BreakpointMode = 0x20,
+		DisableWindowResizing = 0x40
+	};
 
 	std::unique_ptr<Renderer> _renderer;
 	std::unique_ptr<FrameSourceBase> _frameSource;

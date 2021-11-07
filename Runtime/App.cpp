@@ -2,9 +2,10 @@
 #include "App.h"
 #include "Utils.h"
 #include "GraphicsCaptureFrameSource.h"
-#include "DwmSharedSurfaceFrameSource.h"
-#include "GDIOverDXGIFrameSource.h"
 #include "GDIFrameSource.h"
+#include "DwmSharedSurfaceFrameSource.h"
+#include "LegacyGDIFrameSource.h"
+#include "MagCallbackFrameSource.h"
 
 
 extern std::shared_ptr<spdlog::logger> logger;
@@ -46,20 +47,15 @@ bool App::Run(
 	HWND hwndSrc,
 	const std::string& effectsJson,
 	int captureMode,
-	bool noCursor,
-	bool adjustCursorSpeed,
-	bool showFPS,
-	bool disableRoundCorner,
 	int frameRate,
-	bool disableLowLatency
+	UINT flags
 ) {
 	_hwndSrc = hwndSrc;
 	_captureMode = captureMode;
-	_noCursor = noCursor;
-	_adjustCursorSpeed = adjustCursorSpeed;
-	_showFPS = showFPS;
 	_frameRate = frameRate;
-	_disableLowLatency = disableLowLatency;
+	_flags = flags;
+
+	SPDLOG_LOGGER_INFO(logger, fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tshowFPS：{}\n\tdisableRoundCorner：{}\n\tframeRate：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsShowFPS(), IsDisableRoundCorner(), frameRate, IsDisableLowLatency(), IsBreakpointMode()));
 
 	// 每次进入全屏都要重置
 	_nextTimerId = 1;
@@ -93,13 +89,16 @@ bool App::Run(
 		_frameSource.reset(new GraphicsCaptureFrameSource());
 		break;
 	case 1:
-		_frameSource.reset(new DwmSharedSurfaceFrameSource());
+		_frameSource.reset(new GDIFrameSource());
 		break;
 	case 2:
-		_frameSource.reset(new GDIOverDXGIFrameSource());
+		_frameSource.reset(new DwmSharedSurfaceFrameSource());
 		break;
 	case 3:
-		_frameSource.reset(new GDIFrameSource());
+		_frameSource.reset(new LegacyGDIFrameSource());
+		break;
+	case 4:
+		_frameSource.reset(new MagCallbackFrameSource());
 		break;
 	default:
 		SPDLOG_LOGGER_CRITICAL(logger, "Unknown capture mode, terminating");
@@ -123,9 +122,9 @@ bool App::Run(
 		return false;
 	}
 
-	// 合适时禁用窗口圆角
+	// 禁用窗口圆角
 	bool roundCornerDisabled = false;
-	if (disableRoundCorner && _frameSource->HasRoundCornerInWin11()) {
+	if (IsDisableRoundCorner() && _frameSource->HasRoundCornerInWin11()) {
 		const auto& version = Utils::GetOSVersion();
 		bool isWin11 = Utils::CompareVersion(
 			version.dwMajorVersion, version.dwMinorVersion,
@@ -143,7 +142,32 @@ bool App::Run(
 		}
 	}
 
+	// 禁用窗口大小调整
+	bool windowResizingDisabled = false;
+	if (IsDisableWindowResizing()) {
+		LONG_PTR style = GetWindowLongPtr(hwndSrc, GWL_STYLE);
+		if (style & WS_THICKFRAME) {
+			if (SetWindowLongPtr(hwndSrc, GWL_STYLE, style ^ WS_THICKFRAME)) {
+				SPDLOG_LOGGER_INFO(logger, "已禁用窗口大小调整");
+				windowResizingDisabled = true;
+			} else {
+				SPDLOG_LOGGER_ERROR(logger, "禁用窗口大小调整失败");
+			}
+		}
+	}
+
 	_Run();
+
+	if (windowResizingDisabled) {
+		LONG_PTR style = GetWindowLongPtr(hwndSrc, GWL_STYLE);
+		if (!(style & WS_THICKFRAME)) {
+			if (SetWindowLongPtr(hwndSrc, GWL_STYLE, style | WS_THICKFRAME)) {
+				SPDLOG_LOGGER_INFO(logger, "已取消禁用窗口大小调整");
+			} else {
+				SPDLOG_LOGGER_ERROR(logger, "取消禁用窗口大小调整失败");
+			}
+		}
+	}
 
 	if (roundCornerDisabled) {
 		INT attr = DWMWCP_DEFAULT;
@@ -236,7 +260,7 @@ bool App::_CreateHostWnd() {
 	_hostWndSize.cx = screenRect.right - screenRect.left;
 	_hostWndSize.cy = screenRect.bottom - screenRect.top;
 	_hwndHost = CreateWindowEx(
-		WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+		(IsBreakpointMode() ? 0 : WS_EX_TOPMOST) | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
 		_HOST_WINDOW_CLASS_NAME,
 		NULL, WS_CLIPCHILDREN | WS_POPUP | WS_VISIBLE,
 		screenRect.left,

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -213,11 +213,11 @@
   <data name="UI_Options_Advanced" xml:space="preserve">
     <value>高级</value>
   </data>
-  <data name="UI_Options_Advanced_Buffer_Precision" xml:space="preserve">
-    <value>中间纹理精度</value>
+  <data name="UI_Options_Advanced_Breakpoint_Mode" xml:space="preserve">
+    <value>断点模式</value>
   </data>
-  <data name="UI_Options_Advanced_Buffer_Precision_Default" xml:space="preserve">
-    <value>默认</value>
+  <data name="UI_Options_Advanced_Debug" xml:space="preserve">
+    <value>调试</value>
   </data>
   <data name="UI_Options_Advanced_Logging_Level" xml:space="preserve">
     <value>日志级别</value>
@@ -233,6 +233,9 @@
   </data>
   <data name="UI_Options_Advanced_Logging_Level_Warn" xml:space="preserve">
     <value>警告</value>
+  </data>
+  <data name="UI_Options_Advanced_Show_All_Capture_Methods" xml:space="preserve">
+    <value>显示所有捕获模式</value>
   </data>
   <data name="UI_Options_Application" xml:space="preserve">
     <value>应用程序</value>
@@ -276,6 +279,9 @@
   <data name="UI_Options_Scale_Disable_Round_Corner" xml:space="preserve">
     <value>缩放时禁用窗口圆角</value>
   </data>
+  <data name="UI_Options_Scale_Disable_Window_Resizing" xml:space="preserve">
+    <value>缩放时禁用窗口大小调整</value>
+  </data>
   <data name="UI_Options_Scale_Frame_Rate" xml:space="preserve">
     <value>帧率</value>
   </data>
@@ -299,6 +305,9 @@
   </data>
   <data name="UI_Options_Scale_Show_Frame_Rate" xml:space="preserve">
     <value>显示帧率</value>
+  </data>
+  <data name="UI_Options_Scale_Source_Window" xml:space="preserve">
+    <value>源窗口</value>
   </data>
   <data name="UI_Options_Scale_VSync" xml:space="preserve">
     <value>垂直同步</value>

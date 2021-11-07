@@ -1,44 +1,55 @@
 #include "pch.h"
 #include "GDIFrameSource.h"
 #include "App.h"
-#include "Utils.h"
 
 
 extern std::shared_ptr<spdlog::logger> logger;
 
-
 bool GDIFrameSource::Initialize() {
 	_hwndSrc = App::GetInstance().GetHwndSrc();
-	_d3dDC = App::GetInstance().GetRenderer().GetD3DDC();
+	const RECT& srcClientRect = App::GetInstance().GetSrcClientRect();
 
-	_srcClientRect = App::GetInstance().GetSrcClientRect();
-	_srcClientSize = { _srcClientRect.right - _srcClientRect.left, _srcClientRect.bottom - _srcClientRect.top };
-
-	if (!GetWindowRect(_hwndSrc, &_srcWndRect)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetWindowRect 失败"));
-		return false;
+	float dpiScale = -1;
+	if (!_GetWindowDpiScale(_hwndSrc, dpiScale)) {
+		SPDLOG_LOGGER_ERROR(logger, "_GetWindowDpiScale 失败");
 	}
-	_frameSize = { _srcWndRect.right - _srcWndRect.left, _srcWndRect.bottom - _srcWndRect.top };
 
-	_pixels.resize(static_cast<size_t>(_frameSize.cx) * _frameSize.cy * 4);
-	
+	SPDLOG_LOGGER_INFO(logger, fmt::format("源窗口 DPI 缩放为 {}", dpiScale));
+
+	if (dpiScale > 0 && abs(dpiScale - 1.0f) > 1e-5f) {
+		// DPI 感知
+		_frameSize = {
+			(LONG)ceilf((srcClientRect.right - srcClientRect.left) / dpiScale),
+			(LONG)ceilf((srcClientRect.bottom - srcClientRect.top) / dpiScale)
+		};
+	} else {
+		_frameSize = { srcClientRect.right - srcClientRect.left, srcClientRect.bottom - srcClientRect.top };
+	}
+
 	D3D11_TEXTURE2D_DESC desc{};
 	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	desc.Width = _srcClientSize.cx;
-	desc.Height = _srcClientSize.cy;
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	desc.Width = _frameSize.cx;
+	desc.Height = _frameSize.cy;
+	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
 	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_output);
 	if (FAILED(hr)) {
 		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
 		return false;
 	}
 
+	hr = _output.As<IDXGISurface1>(&_dxgiSurface);
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("从 Texture2D 获取 IDXGISurface1 失败", hr));
+		return false;
+	}
+
+	SPDLOG_LOGGER_INFO(logger, "GDIFrameSource 初始化完成");
 	return true;
 }
 
@@ -47,63 +58,26 @@ ComPtr<ID3D11Texture2D> GDIFrameSource::GetOutput() {
 }
 
 bool GDIFrameSource::Update() {
-	HDC hdcSrc = GetWindowDC(_hwndSrc);
-	if (!hdcSrc) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetWindowDC 失败"));
-		return false;
-	}
-	HDC hdcScreen = GetDC(NULL);
-	if (!hdcScreen) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetDC 失败"));
-		ReleaseDC(_hwndSrc, hdcSrc);
-		return false;
-	}
-
-	Utils::ScopeExit se([&]() {
-		ReleaseDC(_hwndSrc, hdcSrc);
-		ReleaseDC(NULL, hdcScreen);
-	});
-	
-	// 直接获取 DC 中当前图像，而不是使用 BitBlt 复制
-	HBITMAP hBmpDest = (HBITMAP)GetCurrentObject(hdcSrc, OBJ_BITMAP);
-	if (!hBmpDest) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetCurrentObject 失败"));
-		return false;
-	}
-	
-	BITMAPINFO bi{};
-	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bi.bmiHeader.biWidth = _frameSize.cx;
-	bi.bmiHeader.biHeight = -_frameSize.cy;
-	bi.bmiHeader.biPlanes = 1;
-	bi.bmiHeader.biCompression = BI_RGB;
-	bi.bmiHeader.biBitCount = 32;
-	bi.bmiHeader.biSizeImage = (DWORD)_pixels.size();
-
-	if (GetDIBits(hdcScreen, hBmpDest, 0, _frameSize.cy, _pixels.data(), &bi, DIB_RGB_COLORS) != _frameSize.cy) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetDIBits 失败"));
-		return false;
-	}
-
-	// 将客户区的像素复制到 Texture2D 中
-	D3D11_MAPPED_SUBRESOURCE ms{};
-	HRESULT hr = _d3dDC->Map(_output.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+	HDC hdcDest;
+	HRESULT hr = _dxgiSurface->GetDC(TRUE, &hdcDest);
 	if (FAILED(hr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("Map 失败", hr));
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("从 Texture2D 获取 IDXGISurface1 失败", hr));
 		return false;
 	}
 
-	BYTE* pPixels = _pixels.data() + (_frameSize.cx * (_srcClientRect.top - _srcWndRect.top) 
-		+ _srcClientRect.left - _srcWndRect.left) * 4;
-	BYTE* pData = (BYTE*)ms.pData;
-	for (int i = 0; i < _srcClientSize.cy; ++i) {
-		std::memcpy(pData, pPixels, static_cast<size_t>(_srcClientSize.cx) * 4);
-
-		pPixels += _frameSize.cx * 4;
-		pData += ms.RowPitch;
+	HDC hdcSrcClient = GetDCEx(_hwndSrc, NULL, DCX_LOCKWINDOWUPDATE);
+	if (!hdcSrcClient) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetDC 失败"));
+		_dxgiSurface->ReleaseDC(nullptr);
+		return false;
 	}
 
-	_d3dDC->Unmap(_output.Get(), 0);
+	if (!BitBlt(hdcDest, 0, 0, _frameSize.cx, _frameSize.cy, hdcSrcClient, 0, 0, SRCCOPY)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("BitBlt 失败"));
+	}
 
-	return true;
+	ReleaseDC(_hwndSrc, hdcSrcClient);
+	_dxgiSurface->ReleaseDC(nullptr);
+
+    return true;
 }

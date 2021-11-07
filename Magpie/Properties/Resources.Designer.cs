@@ -421,20 +421,20 @@ namespace Magpie.Properties {
         }
         
         /// <summary>
-        ///   查找类似 Intermediate Texture Precision 的本地化字符串。
+        ///   查找类似 Breakpoint Mode 的本地化字符串。
         /// </summary>
-        public static string UI_Options_Advanced_Buffer_Precision {
+        public static string UI_Options_Advanced_Breakpoint_Mode {
             get {
-                return ResourceManager.GetString("UI_Options_Advanced_Buffer_Precision", resourceCulture);
+                return ResourceManager.GetString("UI_Options_Advanced_Breakpoint_Mode", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   查找类似 Default 的本地化字符串。
+        ///   查找类似 Debug 的本地化字符串。
         /// </summary>
-        public static string UI_Options_Advanced_Buffer_Precision_Default {
+        public static string UI_Options_Advanced_Debug {
             get {
-                return ResourceManager.GetString("UI_Options_Advanced_Buffer_Precision_Default", resourceCulture);
+                return ResourceManager.GetString("UI_Options_Advanced_Debug", resourceCulture);
             }
         }
         
@@ -480,6 +480,15 @@ namespace Magpie.Properties {
         public static string UI_Options_Advanced_Logging_Level_Warn {
             get {
                 return ResourceManager.GetString("UI_Options_Advanced_Logging_Level_Warn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Show All Capture Methods 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Advanced_Show_All_Capture_Methods {
+            get {
+                return ResourceManager.GetString("UI_Options_Advanced_Show_All_Capture_Methods", resourceCulture);
             }
         }
         
@@ -610,6 +619,15 @@ namespace Magpie.Properties {
         }
         
         /// <summary>
+        ///   查找类似 Disable Window Resizing while zoomed 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Disable_Window_Resizing {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Disable_Window_Resizing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Frame Rate 的本地化字符串。
         /// </summary>
         public static string UI_Options_Scale_Frame_Rate {
@@ -678,6 +696,15 @@ namespace Magpie.Properties {
         public static string UI_Options_Scale_Show_Frame_Rate {
             get {
                 return ResourceManager.GetString("UI_Options_Scale_Show_Frame_Rate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Source Window 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Source_Window {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Source_Window", resourceCulture);
             }
         }
         

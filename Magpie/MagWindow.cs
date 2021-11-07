@@ -31,13 +31,19 @@ namespace Magpie {
 			public volatile IntPtr hwndSrc;
 			public volatile int captureMode;
 			public volatile string effectsJson;
-			public volatile bool noCursor;
-			public volatile bool adjustCursorSpeed;
-			public volatile bool showFPS;
-			public volatile bool disableRoundCorner;
 			public volatile int frameRateOrLogLevel;
-			public volatile bool disableLowLatency;
+			public volatile uint flags;
 			public volatile MagWindowCmd cmd = MagWindowCmd.Run;
+		}
+
+		private enum FlagMasks : uint {
+			NoCursor = 0x1,
+			AdjustCursorSpeed = 0x2,
+			ShowFPS = 0x4,
+			DisableRoundCorner = 0x8,
+			DisableLowLatency = 0x10,
+			BreakpointMode = 0x20,
+			DisableWindowResizing = 0x40
 		}
 
 		private readonly MagWindowParams magWindowParams = new MagWindowParams();
@@ -99,12 +105,8 @@ namespace Magpie {
 							magWindowParams.hwndSrc,
 							magWindowParams.effectsJson,
 							magWindowParams.captureMode,
-							magWindowParams.noCursor,
-							magWindowParams.adjustCursorSpeed,
-							magWindowParams.showFPS,
-							magWindowParams.disableRoundCorner,
 							magWindowParams.frameRateOrLogLevel,
-							magWindowParams.disableLowLatency
+							magWindowParams.flags
 						);
 
 						CloseEvent(msg);
@@ -145,8 +147,10 @@ namespace Magpie {
 			bool noCursor,
 			bool adjustCursorSpeed,
 			bool disableRoundCorner,
+			bool disableWindowResizing,
 			int frameRate,
-			bool disableLowLatency
+			bool disableLowLatency,
+			bool breakpointMode
 		) {
 			if (Running) {
 				Logger.Info("已存在全屏窗口，取消进入全屏");
@@ -168,12 +172,14 @@ namespace Magpie {
 			magWindowParams.hwndSrc = hwndSrc;
 			magWindowParams.captureMode = captureMode;
 			magWindowParams.effectsJson = effectsJson;
-			magWindowParams.showFPS = showFPS;
-			magWindowParams.noCursor = noCursor;
-			magWindowParams.adjustCursorSpeed = adjustCursorSpeed;
-			magWindowParams.disableRoundCorner = disableRoundCorner;
 			magWindowParams.frameRateOrLogLevel = frameRate;
-			magWindowParams.disableLowLatency = disableLowLatency;
+			magWindowParams.flags = (showFPS ? (uint)FlagMasks.ShowFPS : 0) |
+				(noCursor ? (uint)FlagMasks.NoCursor : 0) |
+				(adjustCursorSpeed ? (uint)FlagMasks.AdjustCursorSpeed : 0) |
+				(disableRoundCorner ? (uint)FlagMasks.DisableRoundCorner : 0) |
+				(disableLowLatency ? (uint)FlagMasks.DisableLowLatency : 0) |
+				(breakpointMode ? (uint)FlagMasks.BreakpointMode : 0) |
+				(disableWindowResizing ? (uint)FlagMasks.DisableWindowResizing : 0);
 
 			_ = runEvent.Set();
 			Running = true;
