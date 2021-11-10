@@ -52,9 +52,6 @@ bool GraphicsCaptureFrameSource::Initialize() {
 	SIZE frameSize = { LONG(_frameInWnd.right - _frameInWnd.left), LONG(_frameInWnd.bottom - _frameInWnd.top) };
 
 	try {
-		// Windows.Graphics.Capture API 似乎只能运行于 MTA，造成诸多麻烦
-		winrt::init_apartment(winrt::apartment_type::multi_threaded);
-
 		if (!winrt::ApiInformation::IsTypePresent(L"Windows.Graphics.Capture.GraphicsCaptureSession")) {
 			SPDLOG_LOGGER_ERROR(logger, "不存在 GraphicsCaptureSession API");
 			return false;
@@ -103,7 +100,7 @@ bool GraphicsCaptureFrameSource::Initialize() {
 		// 开始捕获
 		_captureSession = _captureFramePool.CreateCaptureSession(captureItem);
 
-		// 隐藏光标
+		// 不捕获光标
 		if (winrt::ApiInformation::IsPropertyPresent(
 			L"Windows.Graphics.Capture.GraphicsCaptureSession",
 			L"IsCursorCaptureEnabled"
@@ -119,7 +116,7 @@ bool GraphicsCaptureFrameSource::Initialize() {
 			L"Windows.Graphics.Capture.GraphicsCaptureSession",
 			L"IsBorderRequired"
 		)) {
-			// 从 win11 开始提供
+			// 从 Win11 开始提供
 			// 先请求权限
 			auto status = winrt::GraphicsCaptureAccess::RequestAccessAsync(winrt::GraphicsCaptureAccessKind::Borderless).get();
 			if (status == decltype(status)::Allowed) {
@@ -127,7 +124,6 @@ bool GraphicsCaptureFrameSource::Initialize() {
 			} else {
 				SPDLOG_LOGGER_INFO(logger, "IsCursorCaptureEnabled 失败");
 			}
-			
 		} else {
 			SPDLOG_LOGGER_INFO(logger, "当前系统无 IsBorderRequired API");
 		}

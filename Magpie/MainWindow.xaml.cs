@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using System.Windows.Media;
+using System.Windows.Forms;
 using Magpie.Properties;
 using Magpie.Options;
 
@@ -24,6 +24,9 @@ namespace Magpie {
 		};
 
 		private IKeyboardMouseEvents keyboardEvents = null;
+		private readonly NotifyIcon notifyIcon = new NotifyIcon();
+		private ToolStripItem tsiHotkey;
+		private ToolStripItem tsiScale;
 		private MagWindow magWindow = null;
 
 		private readonly ScaleModelManager scaleModelManager = new ScaleModelManager();
@@ -41,7 +44,7 @@ namespace Magpie {
 		};
 
 		private void Application_Closing() {
-			magWindow.Destory();
+			magWindow.Dispose();
 
 			if (optionsWindow != null) {
 				optionsWindow.Close();
@@ -50,6 +53,8 @@ namespace Magpie {
 
 		public MainWindow() {
 			InitializeComponent();
+
+			InitNotifyIcon();
 
 			BindScaleModels();
 			scaleModelManager.ScaleModelsChanged += BindScaleModels;
@@ -69,6 +74,45 @@ namespace Magpie {
 
 			// 延迟绑定，防止加载时改变设置
 			cbbScaleMode.SelectionChanged += CbbScaleMode_SelectionChanged;
+		}
+
+		void InitNotifyIcon() {
+			notifyIcon.Visible = false;
+			notifyIcon.Icon = Properties.Resources.Logo;
+			notifyIcon.Text = Title;
+			notifyIcon.MouseClick += NotifyIcon_MouseClick;
+
+			ContextMenuStrip menu = new ContextMenuStrip();
+
+			tsiHotkey = menu.Items.Add(Settings.Default.Hotkey, null);
+			tsiHotkey.Enabled = false;
+
+			tsiScale = menu.Items.Add(Properties.Resources.UI_SysTray_Scale_After_5S, null, (sender, e) => {
+				ToggleScaleTimer();
+			});
+
+			menu.Items.Add(Properties.Resources.UI_SysTray_Main_Window, null, (sender, e) => {
+				Show();
+				WindowState = WindowState.Normal;
+			});
+			menu.Items.Add(Properties.Resources.UI_SysTray_Options, null, (sender, e) => {
+				BtnOptions_Click(sender, new RoutedEventArgs());
+			});
+			menu.Items.Add(Properties.Resources.UI_SysTray_Exit, null, (sender, e) => {
+				Application_Closing();
+				Closing -= Window_Closing;
+				Close();
+			});
+			notifyIcon.ContextMenuStrip = menu;
+		}
+
+		private void NotifyIcon_MouseClick(object sender, MouseEventArgs e) {
+			if (e.Button != MouseButtons.Left) {
+				return;
+			}
+
+			Show();
+			WindowState = WindowState.Normal;
 		}
 
 		private void BindScaleModels() {
@@ -110,7 +154,7 @@ namespace Magpie {
 
 		private void TimerScale_Tick(object sender, EventArgs e) {
 			if (--countDownNum != 0) {
-				cmiScale.Header = btnScale.Content = countDownNum.ToString();
+				btnScale.Content = tsiScale.Text = countDownNum.ToString();
 				return;
 			}
 
@@ -133,8 +177,6 @@ namespace Magpie {
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-			magWindow.Dispose();
-
 			if (Settings.Default.MinimizeWhenClose) {
 				WindowState = WindowState.Minimized;
 				e.Cancel = true;
@@ -157,7 +199,7 @@ namespace Magpie {
 				txtHotkey.Foreground = Brushes.Black;
 				Settings.Default.Hotkey = hotkey;
 
-				cmiHotkey.Header = hotkey;
+				tsiHotkey.Text = hotkey;
 
 				Logger.Info($"当前热键：{txtHotkey.Text}");
 			} catch (ArgumentException ex) {
@@ -285,15 +327,16 @@ namespace Magpie {
 
 		private void StartScaleTimer() {
 			countDownNum = DOWN_COUNT;
-			cmiScale.Header = btnScale.Content = countDownNum.ToString();
+			btnScale.Content = tsiScale.Text = countDownNum.ToString();
 
 			timerScale.Start();
 		}
 
 		private void StopScaleTimer() {
 			timerScale.Stop();
+			
 			btnScale.Content = Properties.Resources.UI_Main_Scale_After_5S;
-			cmiScale.Header = Properties.Resources.UI_SysTray_Scale_After_5S;
+			tsiScale.Text = Properties.Resources.UI_SysTray_Scale_After_5S;
 		}
 
 		private void ToggleScaleTimer() {
@@ -307,34 +350,15 @@ namespace Magpie {
 		private void Window_StateChanged(object sender, EventArgs e) {
 			if (WindowState == WindowState.Minimized) {
 				Hide();
-				notifyIcon.Visibility = Visibility.Visible;
+				notifyIcon.Visible = true;
 			} else {
-				notifyIcon.Visibility = Visibility.Hidden;
+				notifyIcon.Visible = false;
 				btnForgetCurrentWnd.Visibility = gridCurWnd.Visibility = timerRestore.IsEnabled ? Visibility.Visible : Visibility.Collapsed;
 			}
 		}
 
-		private void CmiExit_Click(object sender, RoutedEventArgs e) {
-			Application_Closing();
-			Closing -= Window_Closing;
-			Close();
-		}
-
-		private void CmiMainForm_Click(object sender, RoutedEventArgs e) {
-			Show();
-			WindowState = WindowState.Normal;
-		}
-
-		private void CmiScale_Click(object sender, RoutedEventArgs e) {
-			ToggleScaleTimer();
-		}
-
 		private void BtnScale_Click(object sender, RoutedEventArgs e) {
 			ToggleScaleTimer();
-		}
-
-		private void CmiOptions_Click(object sender, RoutedEventArgs e) {
-			BtnOptions_Click(sender, e);
 		}
 
 		private void BtnCancelRestore_Click(object sender, RoutedEventArgs e) {
@@ -372,23 +396,6 @@ namespace Magpie {
 				cbbCaptureMethod.Items.RemoveAt(4);
 				cbbCaptureMethod.Items.RemoveAt(3);
 			}
-		}
-	}
-
-	public class NotifyIconLeftClickCommand : ICommand {
-#pragma warning disable 67
-		// 未使用
-		public event EventHandler CanExecuteChanged;
-#pragma warning restore 67
-
-		public bool CanExecute(object _) {
-			return true;
-		}
-
-		public void Execute(object parameter) {
-			MainWindow window = parameter as MainWindow;
-			window.Show();
-			window.WindowState = WindowState.Normal;
 		}
 	}
 }
