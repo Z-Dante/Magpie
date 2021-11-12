@@ -98,13 +98,29 @@
     ]
   },
   {
-    "name": "ANime4k (Restore)",
+    "name": "ANime4k (Restore VL)",
     "effects": [
       {
         "effect": "Anime4K_Upscale_L"
       },
       {
         "effect": "Anime4K_Restore_VL"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "ANime4k (Restore Soft M)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_L"
+      },
+      {
+        "effect": "Anime4K_Restore_Soft_M"
       },
       {
         "effect": "SSimDownscaler",
@@ -170,7 +186,7 @@
     ]
   },
   {
-    "name": "FidelityFX Super Resolution",
+    "name": "AMD FidelityFX Super Resolution",
     "effects": [
       {
         "effect": "FSR_EASU",
