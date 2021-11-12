@@ -592,11 +592,56 @@ namespace Magpie.Properties {
         }
         
         /// <summary>
+        ///   查找类似 Interpolation Mode 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Cursor_Interpolation_Mode {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Cursor_Interpolation_Mode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Bilinear 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Cursor_Interpolation_Mode_Bilinear {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Cursor_Interpolation_Mode_Bilinear", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Nearest 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Cursor_Interpolation_Mode_Nearest {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Cursor_Interpolation_Mode_Nearest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Same as Source Window 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Cursor_Same_As_Source_Window {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Cursor_Same_As_Source_Window", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Zoom Factor of the Cursor 的本地化字符串。
         /// </summary>
         public static string UI_Options_Scale_Cursor_Zoom_Factor {
             get {
                 return ResourceManager.GetString("UI_Options_Scale_Cursor_Zoom_Factor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Disable DirectFlip 的本地化字符串。
+        /// </summary>
+        public static string UI_Options_Scale_Disable_DirectFlip {
+            get {
+                return ResourceManager.GetString("UI_Options_Scale_Disable_DirectFlip", resourceCulture);
             }
         }
         

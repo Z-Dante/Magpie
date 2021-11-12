@@ -68,7 +68,7 @@ namespace Magpie {
 			if (Settings.Default.ScaleMode >= cbbScaleMode.Items.Count) {
 				Settings.Default.ScaleMode = 0;
 			}
-			cbbScaleMode.SelectedIndex = Settings.Default.ScaleMode;
+			cbbScaleMode.SelectedIndex = (int)Settings.Default.ScaleMode;
 
 			ShowAllCaptureMethods(Settings.Default.DebugShowAllCaptureMethods);
 
@@ -235,7 +235,7 @@ namespace Magpie {
 					break;
 				case 2:
 					// 限制帧率
-					frameRate = Settings.Default.FrameRateLimit;
+					frameRate = (int)Settings.Default.FrameRateLimit;
 					break;
 				default:
 					// 垂直同步
@@ -245,14 +245,17 @@ namespace Magpie {
 			magWindow.Create(
 				effectsJson,
 				Settings.Default.CaptureMode,
+				frameRate,
+				Settings.Default.CursorZoomFactor,
+				Settings.Default.CursorInterpolationMode,
 				Settings.Default.ShowFPS,
 				Settings.Default.NoCursor,
 				Settings.Default.AdjustCursorSpeed,
 				Settings.Default.DisableRoundCorner,
 				Settings.Default.DisableWindowResizing,
-				frameRate,
 				Settings.Default.DisableLowLatency,
-				Settings.Default.DebugBreakpointMode
+				Settings.Default.DebugBreakpointMode,
+				Settings.Default.DisableDirectFlip
 			);
 
 			prevSrcWindow = magWindow.SrcWindow;
@@ -322,7 +325,7 @@ namespace Magpie {
 		}
 
 		private void CbbScaleMode_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-			Settings.Default.ScaleMode = cbbScaleMode.SelectedIndex;
+			Settings.Default.ScaleMode = (uint)cbbScaleMode.SelectedIndex;
 		}
 
 		private void StartScaleTimer() {
@@ -365,7 +368,7 @@ namespace Magpie {
 			StopWaitingForRestore();
 		}
 
-		public void SetRuntimeLogLevel(int logLevel) {
+		public void SetRuntimeLogLevel(uint logLevel) {
 			magWindow.SetLogLevel(logLevel);
 		}
 

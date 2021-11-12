@@ -29,9 +29,11 @@ namespace Magpie {
 		// 传递给 magThread 的参数
 		private class MagWindowParams {
 			public volatile IntPtr hwndSrc;
-			public volatile int captureMode;
+			public volatile uint captureMode;
 			public volatile string effectsJson;
 			public volatile int frameRateOrLogLevel;
+			public volatile float cursorZoomFactor;
+			public volatile uint cursorInterpolationMode;
 			public volatile uint flags;
 			public volatile MagWindowCmd cmd = MagWindowCmd.Run;
 		}
@@ -43,7 +45,8 @@ namespace Magpie {
 			DisableRoundCorner = 0x8,
 			DisableLowLatency = 0x10,
 			BreakpointMode = 0x20,
-			DisableWindowResizing = 0x40
+			DisableWindowResizing = 0x40,
+			DisableDirectFlip = 0x80
 		}
 
 		private readonly MagWindowParams magWindowParams = new MagWindowParams();
@@ -59,7 +62,7 @@ namespace Magpie {
 			magThread = new Thread(() => {
 				Logger.Info("正在新线程中创建全屏窗口");
 
-				int ResolveLogLevel(int logLevel) {
+				uint ResolveLogLevel(uint logLevel) {
 					switch (logLevel) {
 						case 1:
 							return 2;
@@ -99,13 +102,15 @@ namespace Magpie {
 					}
 
 					if (magWindowParams.cmd == MagWindowCmd.SetLogLevel) {
-						NativeMethods.SetLogLevel(ResolveLogLevel(magWindowParams.frameRateOrLogLevel));
+						NativeMethods.SetLogLevel(ResolveLogLevel((uint)magWindowParams.frameRateOrLogLevel));
 					} else {
 						string msg = NativeMethods.Run(
 							magWindowParams.hwndSrc,
 							magWindowParams.effectsJson,
 							magWindowParams.captureMode,
 							magWindowParams.frameRateOrLogLevel,
+							magWindowParams.cursorZoomFactor,
+							magWindowParams.cursorInterpolationMode,
 							magWindowParams.flags
 						);
 
@@ -142,15 +147,18 @@ namespace Magpie {
 
 		public void Create(
 			string effectsJson,
-			int captureMode,
+			uint captureMode,
+			int frameRate,
+			float cursorZoomFactor,
+			uint cursorInterpolationMode,
 			bool showFPS,
 			bool noCursor,
 			bool adjustCursorSpeed,
 			bool disableRoundCorner,
 			bool disableWindowResizing,
-			int frameRate,
 			bool disableLowLatency,
-			bool breakpointMode
+			bool breakpointMode,
+			bool disableDirectFlip
 		) {
 			if (Running) {
 				Logger.Info("已存在全屏窗口，取消进入全屏");
@@ -173,21 +181,24 @@ namespace Magpie {
 			magWindowParams.captureMode = captureMode;
 			magWindowParams.effectsJson = effectsJson;
 			magWindowParams.frameRateOrLogLevel = frameRate;
+			magWindowParams.cursorZoomFactor = cursorZoomFactor;
+			magWindowParams.cursorInterpolationMode = cursorInterpolationMode;
 			magWindowParams.flags = (showFPS ? (uint)FlagMasks.ShowFPS : 0) |
 				(noCursor ? (uint)FlagMasks.NoCursor : 0) |
 				(adjustCursorSpeed ? (uint)FlagMasks.AdjustCursorSpeed : 0) |
 				(disableRoundCorner ? (uint)FlagMasks.DisableRoundCorner : 0) |
 				(disableLowLatency ? (uint)FlagMasks.DisableLowLatency : 0) |
 				(breakpointMode ? (uint)FlagMasks.BreakpointMode : 0) |
-				(disableWindowResizing ? (uint)FlagMasks.DisableWindowResizing : 0);
+				(disableWindowResizing ? (uint)FlagMasks.DisableWindowResizing : 0) |
+				(disableDirectFlip ? (uint)FlagMasks.DisableDirectFlip : 0);
 
 			_ = runEvent.Set();
 			Running = true;
 		}
 
-		public void SetLogLevel(int logLevel) {
+		public void SetLogLevel(uint logLevel) {
 			magWindowParams.cmd = MagWindowCmd.SetLogLevel;
-			magWindowParams.frameRateOrLogLevel = logLevel;
+			magWindowParams.frameRateOrLogLevel = (int)logLevel;
 
 			_ = runEvent.Set();
 		}

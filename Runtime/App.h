@@ -18,10 +18,14 @@ public:
 	bool Run(
 		HWND hwndSrc,
 		const std::string& effectsJson,
-		int captureMode,
+		UINT captureMode,
 		int frameRate,
+		float cursorZoomFactor,
+		UINT cursorInterpolationMode,
 		UINT flags
 	);
+
+	void Close();
 
 	HINSTANCE GetHInstance() const {
 		return _hInst;
@@ -51,12 +55,20 @@ public:
 		return *_frameSource;
 	}
 
-	int GetCaptureMode() const {
+	UINT GetCaptureMode() const {
 		return _captureMode;
 	}
 
 	int GetFrameRate() const {
 		return _frameRate;
+	}
+
+	float GetCursorZoomFactor() const {
+		return _cursorZoomFactor;
+	}
+
+	UINT GetCursorInterpolationMode() const {
+		return _cursorInterpolationMode;
 	}
 
 	bool IsNoCursor() const {
@@ -87,6 +99,10 @@ public:
 		return _flags & (UINT)_FlagMasks::BreakpointMode;
 	}
 
+	bool IsDisableDirectFlip() const {
+		return _flags & (UINT)_FlagMasks::DisableDirectFlip;
+	}
+
 	const char* GetErrorMsg() const {
 		return _errorMsg;
 	}
@@ -104,10 +120,12 @@ private:
 
 	void _Run();
 
-	void _RegisterHostWndClass() const;
+	void _RegisterWndClasses() const;
 
 	// 创建主窗口
 	bool _CreateHostWnd();
+
+	bool _DisableDirectFlip();
 
 	static LRESULT CALLBACK _HostWndProcStatic(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -117,19 +135,20 @@ private:
 
 	const char* _errorMsg = ErrorMessages::GENERIC;
 
-	// 全屏窗口类名
-	static constexpr const wchar_t* _HOST_WINDOW_CLASS_NAME = L"Window_Magpie_967EB565-6F73-4E94-AE53-00CC42592A22";
-	static const UINT _WM_DESTORYHOST;
-
 	HINSTANCE _hInst = NULL;
 	HWND _hwndSrc = NULL;
 	HWND _hwndHost = NULL;
 
+	// 用于关闭 DirectFlip
+	HWND _hwndDDF = NULL;
+
 	SIZE _hostWndSize{};
 	RECT _srcClientRect{};
 
-	int _captureMode = 0;
+	UINT _captureMode = 0;
 	int _frameRate = 0;
+	float _cursorZoomFactor = 0;
+	UINT _cursorInterpolationMode = 02;
 	UINT _flags = 0;
 
 	enum class _FlagMasks : UINT {
@@ -139,7 +158,8 @@ private:
 		DisableRoundCorner = 0x8,
 		DisableLowLatency = 0x10,
 		BreakpointMode = 0x20,
-		DisableWindowResizing = 0x40
+		DisableWindowResizing = 0x40,
+		DisableDirectFlip = 0x80
 	};
 
 	std::unique_ptr<Renderer> _renderer;

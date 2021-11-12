@@ -10,7 +10,11 @@
 
 extern std::shared_ptr<spdlog::logger> logger;
 
-const UINT App::_WM_DESTORYHOST = RegisterWindowMessage(L"MAGPIE_WM_DESTORYHOST");
+const UINT WM_DESTORYHOST = RegisterWindowMessage(L"MAGPIE_WM_DESTORYHOST");
+// 全屏窗口类名
+static constexpr const wchar_t* HOST_WINDOW_CLASS_NAME = L"Window_Magpie_967EB565-6F73-4E94-AE53-00CC42592A22";
+// 用于关闭 DirectFlip 的窗口类名
+static constexpr const wchar_t* DDF_WINDOW_CLASS_NAME = L"Window_Magpie_C322D752-C866-4630-91F5-32CB242A8930";
 
 
 App::~App() {
@@ -37,8 +41,7 @@ bool App::Initialize(HINSTANCE hInst) {
 		SPDLOG_LOGGER_INFO(logger, "Failed to Initialize COM");
 	}
 
-	// 注册主窗口类
-	_RegisterHostWndClass();
+	_RegisterWndClasses();
 
 	// 供隐藏光标和 MagCallback 抓取模式使用
 	if (!MagInitialize()) {
@@ -52,13 +55,17 @@ bool App::Initialize(HINSTANCE hInst) {
 bool App::Run(
 	HWND hwndSrc,
 	const std::string& effectsJson,
-	int captureMode,
+	UINT captureMode,
 	int frameRate,
+	float cursorZoomFactor,
+	UINT cursorInterpolationMode,
 	UINT flags
 ) {
 	_hwndSrc = hwndSrc;
 	_captureMode = captureMode;
 	_frameRate = frameRate;
+	_cursorZoomFactor = cursorZoomFactor;
+	_cursorInterpolationMode = cursorInterpolationMode;
 	_flags = flags;
 
 	SPDLOG_LOGGER_INFO(logger, fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tshowFPS：{}\n\tdisableRoundCorner：{}\n\tframeRate：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsShowFPS(), IsDisableRoundCorner(), frameRate, IsDisableLowLatency(), IsBreakpointMode()));
@@ -80,6 +87,12 @@ bool App::Run(
 	if (!_CreateHostWnd()) {
 		SPDLOG_LOGGER_CRITICAL(logger, "Failed to create main window");
 		return false;
+	}
+
+	if (IsDisableDirectFlip() && !IsBreakpointMode()) {
+		if (!_DisableDirectFlip()) {
+			SPDLOG_LOGGER_ERROR(logger, "_DisableDirectFlip 失败");
+		}
 	}
 
 	_renderer.reset(new Renderer());
@@ -239,13 +252,22 @@ bool App::RegisterTimer(UINT uElapse, std::function<void()> cb) {
 	return true;
 }
 
-// 注册主窗口类
-void App::_RegisterHostWndClass() const {
+
+LRESULT DDFWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	if (msg == WM_DESTROY) {
+		return 0;
+	}
+
+	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+// 注册窗口类
+void App::_RegisterWndClasses() const {
 	WNDCLASSEX wcex = {};
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.lpfnWndProc = _HostWndProcStatic;
 	wcex.hInstance = _hInst;
-	wcex.lpszClassName = _HOST_WINDOW_CLASS_NAME;
+	wcex.lpszClassName = HOST_WINDOW_CLASS_NAME;
 
 	if (!RegisterClassEx(&wcex)) {
 		// 忽略此错误，因为可能是重复注册产生的错误
@@ -253,11 +275,22 @@ void App::_RegisterHostWndClass() const {
 	} else {
 		SPDLOG_LOGGER_INFO(logger, "Main Window Class Registered");
 	}
+
+	wcex.lpfnWndProc = DDFWndProc;
+	wcex.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
+	wcex.lpszClassName = DDF_WINDOW_CLASS_NAME;
+
+	if (!RegisterClassEx(&wcex)) {
+		// 忽略此错误，因为可能是重复注册产生的错误
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("注册 DDF 窗口类失败"));
+	} else {
+		SPDLOG_LOGGER_INFO(logger, "已注册 DDF 窗口类");
+	}
 }
 
 // 创建主窗口
 bool App::_CreateHostWnd() {
-	if (FindWindow(_HOST_WINDOW_CLASS_NAME, nullptr)) {
+	if (FindWindow(HOST_WINDOW_CLASS_NAME, nullptr)) {
 		SPDLOG_LOGGER_CRITICAL(logger, "Main window already exists");
 		return false;
 	}
@@ -267,7 +300,7 @@ bool App::_CreateHostWnd() {
 	_hostWndSize.cy = screenRect.bottom - screenRect.top;
 	_hwndHost = CreateWindowEx(
 		(IsBreakpointMode() ? 0 : WS_EX_TOPMOST) | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
-		_HOST_WINDOW_CLASS_NAME,
+		HOST_WINDOW_CLASS_NAME,
 		NULL, WS_CLIPCHILDREN | WS_POPUP | WS_VISIBLE,
 		screenRect.left,
 		screenRect.top,
@@ -286,7 +319,8 @@ bool App::_CreateHostWnd() {
 	SPDLOG_LOGGER_INFO(logger, fmt::format("Main Window Dimensions：{}x{}", _hostWndSize.cx, _hostWndSize.cy));
 
 	// 设置窗口不透明
-	if (!SetLayeredWindowAttributes(_hwndHost, 0, 255, LWA_ALPHA)) {
+
+	if (!SetLayeredWindowAttributes(_hwndHost, 0, IsDisableDirectFlip() ? 254 : 255, LWA_ALPHA)) {
 		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetLayeredWindowAttributes Failure"));
 	}
 
@@ -298,15 +332,46 @@ bool App::_CreateHostWnd() {
 	return true;
 }
 
-LRESULT App::_HostWndProcStatic(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	return GetInstance()._HostWndProc(hWnd, message, wParam, lParam);
+bool App::_DisableDirectFlip() {
+	// 没有显式关闭 DirectFlip 的方法
+	// 将全屏窗口设为稍微透明，以灰色全屏窗口为背景
+	_hwndDDF = CreateWindowEx(
+		WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+		DDF_WINDOW_CLASS_NAME, NULL, WS_CLIPCHILDREN | WS_POPUP | WS_VISIBLE,
+		0, 0, _hostWndSize.cx, _hostWndSize.cy, NULL, NULL, _hInst, NULL
+	);
+
+	if (!_hwndDDF) {
+		SPDLOG_LOGGER_CRITICAL(logger, MakeWin32ErrorMsg("创建 DDF 窗口失败"));
+		return false;
+	}
+
+	if (!SetWindowPos(_hwndDDF, _hwndHost, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOREDRAW)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetWindowPos 失败"));
+	}
+
+	// 设置窗口不透明
+	if (!SetLayeredWindowAttributes(_hwndDDF, 0, 255, LWA_ALPHA)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetLayeredWindowAttributes 失败"));
+	}
+
+	if (!ShowWindow(_hwndDDF, SW_NORMAL)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("ShowWindow 失败"));
+	}
+
+	SPDLOG_LOGGER_INFO(logger, "已创建 DDF 主窗口");
+	return true;
+}
+
+LRESULT App::_HostWndProcStatic(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	return GetInstance()._HostWndProc(hWnd, msg, wParam, lParam);
 }
 
 
 LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	if (message == _WM_DESTORYHOST) {
-		SPDLOG_LOGGER_INFO(logger, "Received MAGPIE_WM_DESTORYHOST message, main window will be destroyed soon");
-		DestroyWindow(_hwndHost);
+	if (message == WM_DESTORYHOST) {
+		SPDLOG_LOGGER_INFO(logger, "Received MAGPIE_WM_DESTORYHOST message，main window will be destroyed");
+		Close();
 		return 0;
 	}
 
@@ -341,4 +406,11 @@ void App::_ReleaseResources() {
 
 	// 计时器资源在窗口销毁时自动释放
 	_timerCbs.clear();
+}
+
+void App::Close() {
+	if (_hwndDDF) {
+		DestroyWindow(_hwndDDF);
+	}
+	DestroyWindow(_hwndHost);
 }
