@@ -1,3 +1,19 @@
+// Copyright (c) 2021 - present, Liu Xu
+//
+//  This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 using Gma.System.MouseKeyHook;
 using System;
 using System.Collections.Generic;
@@ -414,9 +430,9 @@ namespace Magpie {
 			}
 		}
 
-		private void CheckOSTheme() {
-			bool isLightTheme = false;
+		private bool? isLightTheme = null;
 
+		private void CheckOSTheme() {
 			// 检查注册表获取系统主题，迁移到新版本的 .NET 后将使用 WinRT
 			IntPtr hKey = IntPtr.Zero;
 			if (NativeMethods.RegOpenKeyEx(
@@ -436,16 +452,18 @@ namespace Magpie {
 					data,
 					ref dataSize
 				) == 0) {
-					isLightTheme = data.Any(b => { return b != 0; });
+					bool newVal = data.Any(b => { return b != 0; });
+					if (!isLightTheme.HasValue || newVal != isLightTheme.Value) {
+						isLightTheme = newVal;
+						Uri logoUri = new Uri($"pack://application:,,,/Magpie;component/Resources/Logo_{(newVal ? "Black" : "White")}.ico");
+
+						notifyIcon.Icon = new System.Drawing.Icon(App.GetResourceStream(logoUri).Stream);
+						System.Windows.Application.Current.Resources["Logo"] = new BitmapImage(logoUri);
+					}
 				}
 
 				NativeMethods.RegCloseKey(hKey);
 			}
-
-			Uri logoUri = new Uri($"pack://application:,,,/Magpie;component/Resources/Logo_{(isLightTheme ? "Black" : "White")}.ico");
-
-			notifyIcon.Icon = new System.Drawing.Icon(App.GetResourceStream(logoUri).Stream);
-			System.Windows.Application.Current.Resources["Logo"] = new BitmapImage(logoUri);
 		}
 	}
 }

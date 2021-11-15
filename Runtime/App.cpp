@@ -67,12 +67,26 @@ bool App::Run(
 	_cursorInterpolationMode = cursorInterpolationMode;
 	_flags = flags;
 
-	SPDLOG_LOGGER_INFO(logger, fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tshowFPS：{}\n\tdisableRoundCorner：{}\n\tframeRate：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsShowFPS(), IsDisableRoundCorner(), frameRate, IsDisableLowLatency(), IsBreakpointMode()));
+	SPDLOG_LOGGER_INFO(logger, fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tshowFPS：{}\n\tdisableRoundCorner：{}\n\tframeRate：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}\n\tdisableWindowResizing：{}\n\tdisableDirectFlip：{}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsShowFPS(), IsDisableRoundCorner(), frameRate, IsDisableLowLatency(), IsBreakpointMode(), IsDisableWindowResizing(), IsDisableDirectFlip()));
 
 	// 每次进入全屏都要重置
 	_nextTimerId = 1;
 	
 	SetErrorMsg(ErrorMessages::GENERIC);
+
+	// 禁用窗口大小调整
+	bool windowResizingDisabled = false;
+	if (IsDisableWindowResizing()) {
+		LONG_PTR style = GetWindowLongPtr(hwndSrc, GWL_STYLE);
+		if (style & WS_THICKFRAME) {
+			if (SetWindowLongPtr(hwndSrc, GWL_STYLE, style ^ WS_THICKFRAME)) {
+				SPDLOG_LOGGER_INFO(logger, "已禁用窗口大小调整");
+				windowResizingDisabled = true;
+			} else {
+				SPDLOG_LOGGER_ERROR(logger, "禁用窗口大小调整失败");
+			}
+		}
+	}
 
 	_srcClientRect = Utils::GetClientScreenRect(_hwndSrc);
 	if (_srcClientRect.right == 0 || _srcClientRect.bottom == 0) {
@@ -160,22 +174,20 @@ bool App::Run(
 		}
 	}
 
-	// 禁用窗口大小调整
-	bool windowResizingDisabled = false;
-	if (IsDisableWindowResizing()) {
-		LONG_PTR style = GetWindowLongPtr(hwndSrc, GWL_STYLE);
-		if (style & WS_THICKFRAME) {
-			if (SetWindowLongPtr(hwndSrc, GWL_STYLE, style ^ WS_THICKFRAME)) {
-				SPDLOG_LOGGER_INFO(logger, "已禁用窗口大小调整");
-				windowResizingDisabled = true;
-			} else {
-				SPDLOG_LOGGER_ERROR(logger, "禁用窗口大小调整失败");
-			}
+	_Run();
+
+	// 还原窗口圆角
+	if (roundCornerDisabled) {
+		INT attr = DWMWCP_DEFAULT;
+		HRESULT hr = DwmSetWindowAttribute(hwndSrc, DWMWA_WINDOW_CORNER_PREFERENCE, &attr, sizeof(attr));
+		if (FAILED(hr)) {
+			SPDLOG_LOGGER_INFO(logger, "Failed to disable rounded window corners");
+		} else {
+			SPDLOG_LOGGER_INFO(logger, "Rounded window corners has been disabled");
 		}
 	}
 
-	_Run();
-
+	// 还原窗口大小调整
 	if (windowResizingDisabled) {
 		LONG_PTR style = GetWindowLongPtr(hwndSrc, GWL_STYLE);
 		if (!(style & WS_THICKFRAME)) {
@@ -186,17 +198,6 @@ bool App::Run(
 			}
 		}
 	}
-
-	if (roundCornerDisabled) {
-		INT attr = DWMWCP_DEFAULT;
-		HRESULT hr = DwmSetWindowAttribute(hwndSrc, DWMWA_WINDOW_CORNER_PREFERENCE, &attr, sizeof(attr));
-		if (FAILED(hr)) {
-			SPDLOG_LOGGER_INFO(logger, "Failed to disable rounded window corners");
-		} else {
-			SPDLOG_LOGGER_INFO(logger, "Rounded window corners has been undisabled");
-		}
-	}
-	
 	return true;
 }
 
