@@ -1,5 +1,5 @@
 # MAGPIE - Forked from https://github.com/Blinue/Magpie
-######################################################################################################    
+#######################################################################################    
 **HOW TO USE:** 
 
  ☛ Run Magpie and keep in open in the background    
@@ -9,7 +9,7 @@
  
  NOTE: You'll need to start Magpie as admin if you want to upscale a game that's also running with admin privileges 
  
-######################################################################################################    
+#######################################################################################    
 **SOME COMPARISONS / UPSCALING RESULTS WITH VARIOUS PRESETS:**
 
 * Little Busters English Edition   
@@ -50,7 +50,7 @@ https://imgsli.com/Nzg3NzY
 * Old v0.6.0 ACNet Screenshots from various VNs:     
 https://imgur.com/a/lnBpL0q
 
-######################################################################################################    
+#######################################################################################    
 **RECOMMENDED PRESETS**
 
 1. Anime4K
@@ -59,14 +59,14 @@ https://imgur.com/a/lnBpL0q
 
 * Anime4k (Light) - Only if you have low end hardware and are facing performance issues.
 
-######################################################################################################    
+#######################################################################################    
 **RECOMMENDED SETTINGS**
 
 1. "Restore Full Screen When The Source Window Regains Focus" from ZOOM settings if you have a habit of alt-tabbing and don't want to manually zoom back in with the hotkeys
 2. "Run at Startup" if you want magpie to start automatically everytime you start your PC. 
 3. "Minimize to the System Tray at Startup" with #2 if you want Magpie to start silently
 
-######################################################################################################    
+#######################################################################################    
 **SOME POINTERS ABOUT THE PRESETS**
 * RCAS - Uses the CAS filter from FSR. Higher overall contrast and sharpness. I used this one instead of the standard CAS cause IMO it makes the details stand out a lot more.
 * ACNet - ACNet works very well for anime type art, looks very clean with think lines at the cost of some detail loss.
@@ -75,7 +75,7 @@ https://imgur.com/a/lnBpL0q
 * Anime4K Denoise - Anime4kspecific denoising upscaler. For noisy sources. Not recommended for VNs. As the name implies it gets rid of noise (and some details too)
 * Restore - Anime4kspecific detail enhancement module. very sharp but produces ringing artifacts. The soft variant doesn't have ringing artifact but isn't as sharp either.
 
-########################################## ORIGINAL README ############################################    
+################################## ORIGINAL README #####################################   
 # MAGPIE
 
 [![build](https://github.com/Blinue/Magpie/actions/workflows/build.yml/badge.svg)](https://github.com/Blinue/Magpie/actions/workflows/build.yml)
