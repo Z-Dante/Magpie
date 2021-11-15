@@ -75,7 +75,15 @@ https://imgur.com/a/lnBpL0q
 * Anime4K Denoise - Anime4kspecific denoising upscaler. For noisy sources. Not recommended for VNs. As the name implies it gets rid of noise (and some details too)
 * Restore - Anime4kspecific detail enhancement module. very sharp but produces ringing artifacts. The soft variant doesn't have ringing artifact but isn't as sharp either.
 
-################################## ORIGINAL README #####################################   
+#######################################################################################    
+**DOWNLOAD**
+
+Head over to the release section - 
+https://github.com/Z-Dante/Magpie/releases
+
+Or grab automated builds from - https://github.com/Z-Dante/Magpie/actions (click on the topmost one and select Magpie-Auto-Build)
+
+################################# **ORIGINAL README** ####################################   
 # MAGPIE
 
 [![build](https://github.com/Blinue/Magpie/actions/workflows/build.yml/badge.svg)](https://github.com/Blinue/Magpie/actions/workflows/build.yml)
