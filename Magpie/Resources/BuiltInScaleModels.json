@@ -1,4 +1,20 @@
 [
+// USAGE: 
+//    {
+//      "name": "Preset Name", # Can be anything
+//      "effects": [
+//        {
+//          "effect": "EFFECT 1" # Effect Name muse same as the .hlsl file from the effects folder
+//        },
+//        {
+//          "effect": "EFFECT 2",
+//          "parameter1": PARAMETER1, # Look inside the .hlsl files for possible parameters. Leave blank for default
+//          "parameter2": PARAMETER2
+//        }
+//      ]
+//    }
+
+  // ACNet works very well for anime type art, looks very clean with think lines at the cost of some detail loss. No optional parametes
   {
     "name": "ACNet",
     "effects": [
@@ -12,6 +28,7 @@
       }
     ]
   },
+  // RCAS - Uses the CAS filter from FSR. Higher overall contrast and sharpness
   {
     "name": "ACNet (RCAS)",
     "effects": [
@@ -29,6 +46,7 @@
       }
     ]
   },
+  // Sharper = Higher contrast
   {
     "name": "ACNet (RCAS Sharp)",
     "effects": [
@@ -46,6 +64,7 @@
       }
     ]
   },
+  // Anime4k = Best for anime type artworks. Does not lose any detail like ACNet. However does not look as clean as ACNet 
   {
     "name": "ANime4k",
     "effects": [
@@ -97,6 +116,8 @@
       }
     ]
   },
+  // Restore is used to make images clearer and sharper after upscaling. Might produce ringing. 
+  // VL has a very high performance cost but produces the best result. Use L or M for better performance but they will cause more artefacts.
   {
     "name": "ANime4k (Restore VL)",
     "effects": [
@@ -113,6 +134,7 @@
       }
     ]
   },
+  // Restore soft is a less aggresive version of Restore. Does not have any ringing artifcats. 
   {
     "name": "ANime4k (Restore Soft M)",
     "effects": [
@@ -129,6 +151,7 @@
       }
     ]
   },
+  // Light and Very Light presets are for low end hardware. Use normal presets if you have a capable rig.
   {
     "name": "Anime4K (Light)",
     "effects": [
@@ -220,6 +243,24 @@
       }
     ]
   },
+  // ACNet/Anime4K + FSR Models should only be used when the game resolution is <0.5x of the screen resolution. Since ACNet and Anime4k can only double the resolution. 
+  // FSR is used to scale the result up to the screen afterwards. Regular SSimDownscaler tends to look broken when it's used for scaling up instad of down.
+  {
+    "name": "ACNet + FSR",
+    "effects": [
+      {
+        "effect": "ACNet"
+      },
+      {
+        "effect": "FSR_EASU",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.7
+      }
+    ]
+  },
   {
     "name": "ANime4k + FSR",
     "effects": [
@@ -249,15 +290,6 @@
       {
         "effect": "FSR_RCAS",
         "sharpness": 0.7
-      }
-    ]
-  },
-  {
-    "name": "Integer Scale 3x",
-    "effects": [
-      {
-        "effect": "Nearest",
-        "scale": [ 3, 3 ]
       }
     ]
   }
