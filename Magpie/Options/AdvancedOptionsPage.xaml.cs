@@ -11,13 +11,14 @@ namespace Magpie.Options {
 		public AdvancedOptionsPage() {
 			InitializeComponent();
 
-#if DEBUG
+// Always show debug options. Taken from https://github.com/Onurtag/Magpie
+//#if DEBUG
 			spDebug.Visibility = Visibility.Visible;
 			ckbShowAllCaptureMethods.Checked += CkbShowAllCaptureMethods_Checked;
 			ckbShowAllCaptureMethods.Unchecked += CkbShowAllCaptureMethods_Unchecked;
-#else
-			spDebug.Visibility = Visibility.Collapsed;
-#endif
+//#else
+//			spDebug.Visibility = Visibility.Collapsed;
+//#endif
 
 			cbbLoggingLevel.SelectionChanged += CbbLoggingLevel_SelectionChanged;
 		}
