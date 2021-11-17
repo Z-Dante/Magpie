@@ -1,9 +1,14 @@
 # MAGPIE - Forked from https://github.com/Blinue/Magpie
+
+[![build](https://github.com/Z-Dante/Magpie/actions/workflows/build.yml/badge.svg)](https://github.com/Z-Dante/Magpie/actions/workflows/build.yml)
+[![All Contributors](https://img.shields.io/github/all-contributors/Blinue/Magpie)](#%E8%B4%A1%E7%8C%AE%E8%80%85-)
+[![许可](https://img.shields.io/github/license/Blinue/Magpie)](./LICENSE)
+
 #######################################################################################    
 **HOW TO USE:** 
 
- ☛ Run Magpie and keep in open in the background    
- ☛ Open your game / visual novel in **windowed mode**    
+ ☛ Run Magpie and keep it open in the background / minimize to tray   
+ ☛ Open the desired game / visual novel in **windowed mode**    
  ☛ Use Alt + F11 hotkeys to upscale your game window using magpie    
  ☛ Modify the ScaleModels.json if you want your very own custom stack of presets to use with Magpie   
  
@@ -85,10 +90,6 @@ Or grab automated builds from - https://github.com/Z-Dante/Magpie/actions (click
 
 ################################# **ORIGINAL README** ####################################   
 # MAGPIE
-
-[![build](https://github.com/Z-Dante/Magpie/actions/workflows/build.yml/badge.svg)](https://github.com/Z-Dante/Magpie/actions/workflows/build.yml)
-[![All Contributors](https://img.shields.io/github/all-contributors/Blinue/Magpie)](#%E8%B4%A1%E7%8C%AE%E8%80%85-)
-[![许可](https://img.shields.io/github/license/Blinue/Magpie)](./LICENSE)
 
 Magpie 可以将任意窗口放大至全屏，支持多种高级缩放算法，包括 Lanczos、[Anime4K](https://github.com/bloc97/Anime4K)、[FSR](https://github.com/GPUOpen-Effects/FidelityFX-FSR)、[FSRCNNX](https://github.com/igv/FSRCNN-TensorFlow)等。
 
