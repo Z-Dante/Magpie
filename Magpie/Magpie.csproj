@@ -16,7 +16,6 @@
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<SelfContained>false</SelfContained>
 	<PublishSingleFile>true</PublishSingleFile>
-	<PublishTrimmed>true</PublishTrimmed>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
