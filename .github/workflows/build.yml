@@ -39,6 +39,6 @@ jobs:
     - name: Store Build
       uses: actions/upload-artifact@v2
       with: 
-          name: Magpie-Auto-Build${{ steps.vars.outputs.sha_short }}
+          name: Magpie-Auto-Build_${{ steps.vars.outputs.sha_short }}
           path: ./publish/
 

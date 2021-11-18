@@ -23,9 +23,8 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 REM 清理不需要的文件
-cd ./publish/
+cd ../publish/
 del *.pdb
 del *lib
 del *.exp
-del Microsoft.Windows.SDK.NET.dll
 del xaudio2_9redist.dll
