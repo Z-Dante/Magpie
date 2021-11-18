@@ -15,7 +15,7 @@
 	<StartupObject>Magpie.App</StartupObject>
 	<PublishReadyToRun>true</PublishReadyToRun>
 	<SelfContained>false</SelfContained>
-	<PublishSingleFile>true</PublishSingleFile>
+	<PublishSingleFile>false</PublishSingleFile>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
