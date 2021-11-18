@@ -1,9 +1,6 @@
 name: build
 
-on:
-  push:
-    branches:
-      - master
+on: [push, pull_request]
 
 env:
   # Configuration type to build.
@@ -18,6 +15,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2.4.0
     
+    - name: Restore NuGet packages
+      run: nuget restore
+    
     - name: Setup Conan
       run: pip install conan
 
@@ -26,16 +26,11 @@ jobs:
       with:
         vs-prerelease: true
 
-    - name: Restore NuGet packages
-      run: nuget restore
-      
     - name: Conan Install
       run: msbuild /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./CONAN_INSTALL
 
-    - name: Build
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./Magpie.sln
+    - name: Publish
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./DEPLOY
 
     - name: Clean up
       run: |
@@ -43,7 +38,6 @@ jobs:
         cd Release
         del *.pdb
         del *.lib
-        del *.xml
         del *.exp
         del xaudio2_9redist.dll
 
@@ -52,4 +46,3 @@ jobs:
       with: 
           name: Magpie-Auto-Build
           path: build\Release
-
