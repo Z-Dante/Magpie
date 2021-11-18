@@ -28,3 +28,4 @@ del *.pdb
 del *lib
 del *.exp
 del xaudio2_9redist.dll
+del Microsoft.Windows.SDK.NET.dll
