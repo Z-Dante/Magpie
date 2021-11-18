@@ -27,4 +27,5 @@ cd ../publish/
 del *.pdb
 del *lib
 del *.exp
+del Microsoft.Windows.SDK.NET.dll
 del xaudio2_9redist.dll
