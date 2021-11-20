@@ -34,6 +34,7 @@ namespace Magpie {
 			public volatile int frameRateOrLogLevel;
 			public volatile float cursorZoomFactor;
 			public volatile uint cursorInterpolationMode;
+			public volatile uint adapterIdx;
 			public volatile uint flags;
 			public volatile MagWindowCmd cmd = MagWindowCmd.Run;
 		}
@@ -46,7 +47,8 @@ namespace Magpie {
 			DisableLowLatency = 0x10,
 			BreakpointMode = 0x20,
 			DisableWindowResizing = 0x40,
-			DisableDirectFlip = 0x80
+			DisableDirectFlip = 0x80,
+			ConfineCursorIn3DGames = 0x100
 		}
 
 		private readonly MagWindowParams magWindowParams = new MagWindowParams();
@@ -111,6 +113,7 @@ namespace Magpie {
 							magWindowParams.frameRateOrLogLevel,
 							magWindowParams.cursorZoomFactor,
 							magWindowParams.cursorInterpolationMode,
+							magWindowParams.adapterIdx,
 							magWindowParams.flags
 						);
 
@@ -151,6 +154,7 @@ namespace Magpie {
 			int frameRate,
 			float cursorZoomFactor,
 			uint cursorInterpolationMode,
+			uint adapterIdx,
 			bool showFPS,
 			bool noCursor,
 			bool adjustCursorSpeed,
@@ -158,7 +162,8 @@ namespace Magpie {
 			bool disableWindowResizing,
 			bool disableLowLatency,
 			bool breakpointMode,
-			bool disableDirectFlip
+			bool disableDirectFlip,
+			bool confineCursorIn3DGames
 		) {
 			if (Running) {
 				Logger.Info("已存在全屏窗口，取消进入全屏");
@@ -183,6 +188,7 @@ namespace Magpie {
 			magWindowParams.frameRateOrLogLevel = frameRate;
 			magWindowParams.cursorZoomFactor = cursorZoomFactor;
 			magWindowParams.cursorInterpolationMode = cursorInterpolationMode;
+			magWindowParams.adapterIdx = adapterIdx;
 			magWindowParams.flags = (showFPS ? (uint)FlagMasks.ShowFPS : 0) |
 				(noCursor ? (uint)FlagMasks.NoCursor : 0) |
 				(adjustCursorSpeed ? (uint)FlagMasks.AdjustCursorSpeed : 0) |
@@ -190,7 +196,8 @@ namespace Magpie {
 				(disableLowLatency ? (uint)FlagMasks.DisableLowLatency : 0) |
 				(breakpointMode ? (uint)FlagMasks.BreakpointMode : 0) |
 				(disableWindowResizing ? (uint)FlagMasks.DisableWindowResizing : 0) |
-				(disableDirectFlip ? (uint)FlagMasks.DisableDirectFlip : 0);
+				(disableDirectFlip ? (uint)FlagMasks.DisableDirectFlip : 0) |
+				(confineCursorIn3DGames ? (uint)FlagMasks.ConfineCursorIn3DGames : 0);
 
 			_ = runEvent.Set();
 			Running = true;

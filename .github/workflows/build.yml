@@ -1,9 +1,6 @@
 name: build
 
-on:
-  push:
-    branches:
-      - master
+on: [push, pull_request]
 
 env:
   # Configuration type to build.
@@ -27,27 +24,31 @@ jobs:
         vs-prerelease: true
 
     - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore .
+      run: nuget restore
       
     - name: Conan Install
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./CONAN_INSTALL
 
     - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./Magpie.sln
-
-    - name: Remove PDBs
+    
+    - name: Clean up
+      working-directory: ./build/Release
       run: |
-        cd build
-        cd Release
         del *.pdb
+        del *.lib
+        del *.xml
+        del *.exp
+        del xaudio2_9redist.dll
 
-    - name: Store Build
+    - name: Save hash
+      id: vars
+      run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+    - name: Store build
       uses: actions/upload-artifact@v2
       with: 
-          name: Magpie-Auto-Build
-          path: build\Release
+          name: Magpie_dev_${{ steps.vars.outputs.sha_short }}
+          path: ./build/Release

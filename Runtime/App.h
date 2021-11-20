@@ -22,6 +22,7 @@ public:
 		int frameRate,
 		float cursorZoomFactor,
 		UINT cursorInterpolationMode,
+		UINT adapterIdx,
 		UINT flags
 	);
 
@@ -71,6 +72,10 @@ public:
 		return _cursorInterpolationMode;
 	}
 
+	UINT GetAdapterIdx() const {
+		return _adapterIdx;
+	}
+
 	bool IsNoCursor() const {
 		return _flags & (UINT)_FlagMasks::NoCursor;
 	}
@@ -101,6 +106,10 @@ public:
 
 	bool IsDisableDirectFlip() const {
 		return _flags & (UINT)_FlagMasks::DisableDirectFlip;
+	}
+
+	bool IsConfineCursorIn3DGames() const {
+		return _flags & (UINT)_FlagMasks::ConfineCursorIn3DGames;
 	}
 
 	const char* GetErrorMsg() const {
@@ -148,7 +157,8 @@ private:
 	UINT _captureMode = 0;
 	int _frameRate = 0;
 	float _cursorZoomFactor = 0;
-	UINT _cursorInterpolationMode = 02;
+	UINT _cursorInterpolationMode = 0;
+	UINT _adapterIdx = 0;
 	UINT _flags = 0;
 
 	enum class _FlagMasks : UINT {
@@ -159,7 +169,8 @@ private:
 		DisableLowLatency = 0x10,
 		BreakpointMode = 0x20,
 		DisableWindowResizing = 0x40,
-		DisableDirectFlip = 0x80
+		DisableDirectFlip = 0x80,
+		ConfineCursorIn3DGames = 0x100
 	};
 
 	std::unique_ptr<Renderer> _renderer;

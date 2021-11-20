@@ -286,5 +286,29 @@ namespace Magpie.Properties {
                 this["DisableDirectFlip"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ConfineCursorIn3DGames {
+            get {
+                return ((bool)(this["ConfineCursorIn3DGames"]));
+            }
+            set {
+                this["ConfineCursorIn3DGames"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint AdapterIdx {
+            get {
+                return ((uint)(this["AdapterIdx"]));
+            }
+            set {
+                this["AdapterIdx"] = value;
+            }
+        }
     }
 }
