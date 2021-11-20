@@ -1,8 +1,95 @@
-# MAGPIE
+# MAGPIE - Forked from https://github.com/Blinue/Magpie
 
-[![build](https://github.com/Blinue/Magpie/actions/workflows/build.yml/badge.svg)](https://github.com/Blinue/Magpie/actions/workflows/build.yml)
+[![build](https://github.com/Z-Dante/Magpie/actions/workflows/build.yml/badge.svg)](https://github.com/Z-Dante/Magpie/actions/workflows/build.yml)
 [![All Contributors](https://img.shields.io/github/all-contributors/Blinue/Magpie)](#%E8%B4%A1%E7%8C%AE%E8%80%85-)
 [![许可](https://img.shields.io/github/license/Blinue/Magpie)](./LICENSE)
+
+#######################################################################################    
+**HOW TO USE:** 
+
+ ☛ Run Magpie and keep it open in the background / minimize to tray   
+ ☛ Open the desired game / visual novel in **windowed mode**    
+ ☛ Use Alt + F11 hotkeys to upscale your game window using magpie    
+ ☛ Modify the ScaleModels.json if you want your very own custom stack of presets to use with Magpie   
+ 
+ NOTE: You'll need to start Magpie as admin if you want to upscale a game that's also running with admin privileges 
+ 
+#######################################################################################    
+**SOME COMPARISONS / UPSCALING RESULTS WITH VARIOUS PRESETS:**
+
+* Little Busters English Edition   
+Original 720p: https://imgur.com/d44YvuW    
+Upscaled: https://imgsli.com/Nzg3NTY    
+
+* Muramasa   
+Original (1024x576): https://imgur.com/cLKNMUT    
+Upscaled: https://imgsli.com/Nzg3NzM/
+
+* Chaos;Head (Chaotic;Head)    
+Original 800x600: https://imgur.com/pscXt9U    
+Upscaled: https://imgsli.com/Nzg3NTg/    
+
+* Sengoku Rance   
+Original 800x600: https://imgur.com/45CUSTX    
+Upscaled: https://imgsli.com/Nzg3NjY    
+Original 2: https://imgur.com/26OyiIv    
+Upscaled 2: https://imgsli.com/Nzg3Njg    
+
+* Majikoi S
+Original 800x600: https://imgur.com/F7cE1cy    
+Upscaled: https://imgsli.com/Nzg3NzA    
+
+* Hoshi Ori Yume Mirai
+Original 720p: https://imgur.com/fRTG8YQ    
+Upscaled: https://imgsli.com/Nzg3NjQ    
+
+* Utawarerumono: Prelude to the Fallen 720p -> 1080p:     
+https://imgsli.com/Nzg3NTU
+
+* Daitoshokan no Hitsujikai 720p -> 1080p:     
+https://imgsli.com/Nzg3NzQ
+
+* Kinkoi 1080 -> 1440p:     
+https://imgsli.com/Nzg3NzY
+
+* Old v0.6.0 ACNet Screenshots from various VNs:     
+https://imgur.com/a/lnBpL0q
+
+#######################################################################################    
+**RECOMMENDED PRESETS**
+
+1. Anime4K
+2. ACNet (RCAS)
+3. Anime4K (RCAS)
+
+* Anime4k (Light) - Only if you have low end hardware and are facing performance issues.
+
+#######################################################################################    
+**RECOMMENDED SETTINGS**
+
+1. "Restore Full Screen When The Source Window Regains Focus" from ZOOM settings if you have a habit of alt-tabbing and don't want to manually zoom back in with the hotkeys
+2. "Run at Startup" if you want magpie to start automatically everytime you start your PC. 
+3. "Minimize to the System Tray at Startup" with #2 if you want Magpie to start silently
+
+#######################################################################################    
+**SOME POINTERS ABOUT THE PRESETS**
+* RCAS - Uses the CAS filter from FSR. Higher overall contrast and sharpness. I used this one instead of the standard CAS cause IMO it makes the details stand out a lot more.
+* ACNet - ACNet works very well for anime type art, looks very clean with think lines at the cost of some detail loss.
+* Anime4k - Direct port of Anime4k v4. Great results for anime type artwork with minimal cost and detail loss. Does not lose any detail like ACNet. However does not look as clean as ACNet either.
+* FSRCNNXLineArt - A fast super resolution CNN algorithm. Despite having the word fast in it, it is quite heavy. Looks great for some VNs and bad at others. Produces ringing artifacts.
+* Anime4K Denoise - Anime4kspecific denoising upscaler. For noisy sources. Not recommended for VNs. As the name implies it gets rid of noise (and some details too)
+* Restore - Anime4kspecific detail enhancement module. very sharp but produces ringing artifacts. The soft variant doesn't have ringing artifact but isn't as sharp either.
+
+#######################################################################################    
+**DOWNLOAD**
+
+Head over to the release section - 
+https://github.com/Z-Dante/Magpie/releases
+
+Or grab automated builds from - https://github.com/Z-Dante/Magpie/actions (click on the topmost one and select Magpie-Auto-Build)
+
+################################# **ORIGINAL README** ####################################   
+# MAGPIE
 
 Magpie 可以将任意窗口放大至全屏，支持多种高级缩放算法，包括 Lanczos、[Anime4K](https://github.com/bloc97/Anime4K)、[FSR](https://github.com/GPUOpen-Effects/FidelityFX-FSR)、[FSRCNNX](https://github.com/igv/FSRCNN-TensorFlow)等。
 
