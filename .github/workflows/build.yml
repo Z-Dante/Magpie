@@ -29,25 +29,15 @@ jobs:
     - name: Conan Install
       run: msbuild /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./CONAN_INSTALL
 
-    - name: Build
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./Magpie.sln
+    - name: Publish
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=x64 ./DEPLOY
 
     - name: Save hash
       id: vars
       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
-    - name: Clean up
-      run: |
-        cd build
-        cd Release
-        del *.pdb
-        del *.lib
-        del *.exp
-        del xaudio2_9redist.dll
-
-    - name: Store Build
+    - name: Store build
       uses: actions/upload-artifact@v2
       with: 
-          name: Magpie-Auto-Build_${{ steps.vars.outputs.sha_short }}
-          path: build\Release
-
+          name: Magpie_Auto_Build_${{ steps.vars.outputs.sha_short }}
+          path: ./publish/
