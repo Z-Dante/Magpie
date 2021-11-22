@@ -44,8 +44,8 @@ public:
 		return _hwndHost;
 	}
 
-	SIZE GetHostWndSize() const {
-		return _hostWndSize;
+	RECT GetHostWndRect() const {
+		return _hostWndRect;
 	}
 
 	Renderer& GetRenderer() {
@@ -112,6 +112,10 @@ public:
 		return _flags & (UINT)_FlagMasks::ConfineCursorIn3DGames;
 	}
 
+	bool IsCropTitleBarOfUWP() const {
+		return _flags & (UINT)_FlagMasks::CropTitleBarOfUWP;
+	}
+
 	const char* GetErrorMsg() const {
 		return _errorMsg;
 	}
@@ -151,7 +155,7 @@ private:
 	// 关闭 DirectFlip 时的背景全屏窗口
 	HWND _hwndDDF = NULL;
 
-	SIZE _hostWndSize{};
+	RECT _hostWndRect{};
 	RECT _srcClientRect{};
 
 	UINT _captureMode = 0;
@@ -170,7 +174,8 @@ private:
 		BreakpointMode = 0x20,
 		DisableWindowResizing = 0x40,
 		DisableDirectFlip = 0x80,
-		ConfineCursorIn3DGames = 0x100
+		ConfineCursorIn3DGames = 0x100,
+		CropTitleBarOfUWP = 0x200
 	};
 
 	std::unique_ptr<Renderer> _renderer;
