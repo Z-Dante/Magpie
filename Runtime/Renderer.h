@@ -54,9 +54,6 @@ public:
 		return _featureLevel;
 	}
 
-	bool CompileShader(bool isVS, std::string_view hlsl, const char* entryPoint,
-		ID3DBlob** blob, const char* sourceName = nullptr, ID3DInclude* include = nullptr);
-
 private:
 	bool _InitD3D();
 

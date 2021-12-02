@@ -1,10 +1,6 @@
 name: build
 
-on:
-  push:
-    paths-ignore: [ 'docs/**', 'img/**', 'tools/**' ]
-  pull_request:
-    paths-ignore: [ 'docs/**', 'img/**', 'tools/**' ]
+on: [push, pull_request]
 
 env:
   # Configuration type to build.
