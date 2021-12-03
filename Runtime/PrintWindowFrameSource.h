@@ -3,10 +3,11 @@
 #include "FrameSourceBase.h"
 
 
-class GDIFrameSource : public FrameSourceBase {
+class PrintWindowFrameSource : public FrameSourceBase {
 public:
-	GDIFrameSource() {};
-	virtual ~GDIFrameSource() {}
+	PrintWindowFrameSource() {}
+
+	virtual ~PrintWindowFrameSource() {}
 
 	bool Initialize() override;
 
@@ -15,13 +16,17 @@ public:
 	bool Update() override;
 
 	bool HasRoundCornerInWin11() override {
-		return false;
+		return true;
 	}
 
 protected:
 	ComPtr<ID3D11DeviceContext> _d3dDC;
 
-	SIZE _frameSize{};
-	ComPtr<IDXGISurface1> _dxgiSurface;
+	ComPtr<IDXGISurface1> _outputSurface;
 	ComPtr<ID3D11Texture2D> _output;
+
+	D3D11_BOX _clientRect{};
+	ComPtr<ID3D11Texture2D> _windowFrame;
+	ComPtr<IDXGISurface1> _windowFrameSurface;
 };
+

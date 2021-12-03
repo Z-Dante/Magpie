@@ -159,9 +159,10 @@
         "effect": "Anime4K_Upscale_S"
       },
       {
-        "effect": "Mitchell",
+        "effect": "Bicubic",
         "scale": [ -1, -1 ],
-        "variant": 1
+        "paramB": 0.0,
+        "paramC": 0.5
       }
     ]
   },
@@ -172,9 +173,10 @@
         "effect": "Anime4K_Upscale_S_Lite"
       },
       {
-        "effect": "Mitchell_Lite",
+        "effect": "Bicubic_Lite",
         "scale": [ -1, -1 ],
-        "variant": 1
+        "paramB": 0.0,
+        "paramC": 0.5
       }
     ]
   },
