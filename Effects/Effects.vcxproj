@@ -290,11 +290,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="CRT_Royale_bind-shader-params.hlsli">
-      <FileType>HLSLHeader</FileType>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="CRT_Royale_scanline-functions.hlsli">
       <FileType>HLSLHeader</FileType>
     </CopyFileToFolders>
@@ -305,15 +300,7 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="CRT_Royale_derived-settings-and-constants.hlsli">
-      <FileType>HLSLHeader</FileType>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="CRT_Royale_special-functions.hlsli">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="CRT_Royale_user-cgp-constants.hlsli">
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>
@@ -328,9 +315,24 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="CRT_Royale_quad-pixel-communication.hlsli">
+    <CopyFileToFolders Include="CRT_Royale_phosphor-mask-resizing.hlsli">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="CRT_Royale_tex2Dantialias.hlsli">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="CRT_Royale_geometry-functions.hlsli">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="CRT_Royale_TileableLinearApertureGrille15Wide8And5d5Spacing.png" />
+    <CopyFileToFolders Include="CRT_Royale_TileableLinearShadowMaskEDP.png" />
+    <CopyFileToFolders Include="CRT_Royale_TileableLinearSlotMaskTall15Wide9And4d5Horizontal9d14VerticalSpacing.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
