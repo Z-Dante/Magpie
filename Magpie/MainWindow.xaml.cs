@@ -391,35 +391,11 @@ namespace Magpie {
 		private void Window_Deactivated(object sender, EventArgs e) {
 			Settings.Default.Save();
 		}
-		
+
 		public void ShowAllCaptureMethods(bool isShow) {
-			if (isShow) {
-				if (cbbCaptureMethod.Items.Count != 3) {
-					return;
-				}
-
-				_ = cbbCaptureMethod.Items.Add(new ComboBoxItem {
-					Content = "Legacy GDI"
-				});
-				_ = cbbCaptureMethod.Items.Add(new ComboBoxItem {
-					Content = "MagCallback"
-				});
-				_ = cbbCaptureMethod.Items.Add(new ComboBoxItem {
-					Content = "PrintWindow"
-				});
-			} else {
-				if (cbbCaptureMethod.Items.Count != 5) {
-					return;
-				}
-
-				if (cbbCaptureMethod.SelectedIndex >= 3) {
-					cbbCaptureMethod.SelectedIndex = 0;
-				}
-				cbbCaptureMethod.Items.RemoveAt(4);
-				cbbCaptureMethod.Items.RemoveAt(3);
-			}
+			_ = isShow;
+			_ = this;
 		}
-		
 		private bool? isLightTheme = null;
 
 		private void CheckOSTheme() {

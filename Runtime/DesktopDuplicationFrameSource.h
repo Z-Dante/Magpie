@@ -1,12 +1,11 @@
 #pragma once
-#include "pch.h"
 #include "FrameSourceBase.h"
 
 
-class GDIFrameSource : public FrameSourceBase {
+class DesktopDuplicationFrameSource : public FrameSourceBase {
 public:
-	GDIFrameSource() {};
-	virtual ~GDIFrameSource() {}
+	DesktopDuplicationFrameSource() {};
+	virtual ~DesktopDuplicationFrameSource() {}
 
 	bool Initialize() override;
 
@@ -17,13 +16,14 @@ public:
 	bool Update() override;
 
 	bool HasRoundCornerInWin11() override {
-		return false;
+		return true;
 	}
 
 private:
-	ComPtr<ID3D11DeviceContext> _d3dDC;
-
-	SIZE _frameSize{};
-	ComPtr<IDXGISurface1> _dxgiSurface;
+	ComPtr<IDXGIResource> _dxgiRes;
 	ComPtr<ID3D11Texture2D> _output;
+	ComPtr<IDXGIOutputDuplication> _outputDup;
+
+	D3D11_BOX _frameInMonitor{};
 };
+

@@ -10,12 +10,6 @@
     <ClCompile Include="GDIFrameSource.cpp">
       <Filter>捕获</Filter>
     </ClCompile>
-    <ClCompile Include="LegacyGDIFrameSource.cpp">
-      <Filter>捕获</Filter>
-    </ClCompile>
-    <ClCompile Include="MagCallbackFrameSource.cpp">
-      <Filter>捕获</Filter>
-    </ClCompile>
     <ClCompile Include="CursorDrawer.cpp">
       <Filter>渲染</Filter>
     </ClCompile>
@@ -61,7 +55,7 @@
     <ClCompile Include="FrameSourceBase.cpp">
       <Filter>捕获</Filter>
     </ClCompile>
-    <ClCompile Include="PrintWindowFrameSource.cpp">
+    <ClCompile Include="DesktopDuplicationFrameSource.cpp">
       <Filter>捕获</Filter>
     </ClCompile>
   </ItemGroup>
@@ -79,12 +73,6 @@
       <Filter>捕获</Filter>
     </ClInclude>
     <ClInclude Include="GDIFrameSource.h">
-      <Filter>捕获</Filter>
-    </ClInclude>
-    <ClInclude Include="LegacyGDIFrameSource.h">
-      <Filter>捕获</Filter>
-    </ClInclude>
-    <ClInclude Include="MagCallbackFrameSource.h">
       <Filter>捕获</Filter>
     </ClInclude>
     <ClInclude Include="CursorDrawer.h">
@@ -135,7 +123,7 @@
     <ClInclude Include="TextureLoader.h">
       <Filter>渲染</Filter>
     </ClInclude>
-    <ClInclude Include="PrintWindowFrameSource.h">
+    <ClInclude Include="DesktopDuplicationFrameSource.h">
       <Filter>捕获</Filter>
     </ClInclude>
   </ItemGroup>
