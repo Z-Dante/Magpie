@@ -1,6 +1,5 @@
 using Magpie.Properties;
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -51,7 +50,8 @@ namespace Magpie {
 			DisableWindowResizing = 0x40,
 			DisableDirectFlip = 0x80,
 			ConfineCursorIn3DGames = 0x100,
-			CropTitleBarOfUWP = 0x200
+			CropTitleBarOfUWP = 0x200,
+			DisableEffectCache = 0x400
 		}
 
 		private readonly MagWindowParams magWindowParams = new();
@@ -65,7 +65,7 @@ namespace Magpie {
 			// 使用 WinRT Capturer API 需要在 MTA 中
 			// C# 窗体必须使用 STA，因此将全屏窗口创建在新的线程里
 			magThread = new Thread(() => {
-				Logger.Info("正在新线程中创建全屏窗口");
+				Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
 				static uint ResolveLogLevel(uint logLevel) {
 					return logLevel switch {
@@ -81,12 +81,8 @@ namespace Magpie {
 					initSuccess = NativeMethods.Initialize(ResolveLogLevel(Settings.Default.LoggingLevel));
 				} catch (DllNotFoundException e) {
 					// 解决某些 DllImport 失败的问题
-					Logger.Warn(e, "未找到 Runtime.dll，尝试设置 Dll 文件的查找路径");
+					Logger.Warn(e, "未找到 Runtime.dll");
 
-					Logger.Info(Directory.GetCurrentDirectory());
-					if (!NativeMethods.SetDllDirectory(Directory.GetCurrentDirectory())) {
-						Logger.Warn($"SetDllDirectory 失败\n\tLastErrorCode={Marshal.GetLastWin32Error()}");
-					}
 					// 显式加载 Runtime.dll，而不是通过 DllImport
 					if (NativeMethods.LoadLibrary("Runtime.dll") == IntPtr.Zero) {
 						Logger.Warn($"LoadLibrary 失败\n\tLastErrorCode={Marshal.GetLastWin32Error()}");
@@ -111,6 +107,8 @@ namespace Magpie {
 					});
 					return;
 				}
+
+				Logger.Info("初始化 Runtime 成功");
 
 				while (magWindowParams.cmd != MagWindowCmd.Exit) {
 					_ = runEvent.WaitOne();
@@ -180,7 +178,8 @@ namespace Magpie {
 			bool breakpointMode,
 			bool disableDirectFlip,
 			bool confineCursorIn3DGames,
-			bool cropTitleBarOfUWP
+			bool cropTitleBarOfUWP,
+			bool disableEffectCache
 		) {
 			if (Running) {
 				Logger.Info("已存在全屏窗口，取消进入全屏");
@@ -215,7 +214,8 @@ namespace Magpie {
 				(disableWindowResizing ? (uint)FlagMasks.DisableWindowResizing : 0) |
 				(disableDirectFlip ? (uint)FlagMasks.DisableDirectFlip : 0) |
 				(confineCursorIn3DGames ? (uint)FlagMasks.ConfineCursorIn3DGames : 0) |
-				(cropTitleBarOfUWP ? (uint)FlagMasks.CropTitleBarOfUWP : 0);
+				(cropTitleBarOfUWP ? (uint)FlagMasks.CropTitleBarOfUWP : 0) |
+				(disableEffectCache ? (uint)FlagMasks.DisableEffectCache : 0);
 
 			_ = runEvent.Set();
 			Running = true;

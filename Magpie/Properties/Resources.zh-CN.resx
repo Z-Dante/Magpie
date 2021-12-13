@@ -132,6 +132,9 @@
   <data name="Msg_Error_Run_As_Admin" xml:space="preserve">
     <value>获取管理员权限失败。</value>
   </data>
+  <data name="Msg_Error_Src_Too_Large" xml:space="preserve">
+    <value>源窗口尺寸不能超过屏幕大小。</value>
+  </data>
   <data name="Msg_Error_Vsync_Off_Not_Supported" xml:space="preserve">
     <value>当前显示器不支持关闭垂直同步。</value>
   </data>
@@ -218,6 +221,9 @@
   </data>
   <data name="UI_Options_Advanced_Debug" xml:space="preserve">
     <value>调试</value>
+  </data>
+  <data name="UI_Options_Advanced_Disable_Effect_Cache" xml:space="preserve">
+    <value>禁用效果缓存</value>
   </data>
   <data name="UI_Options_Advanced_Logging_Level" xml:space="preserve">
     <value>日志级别</value>

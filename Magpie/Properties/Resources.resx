@@ -132,6 +132,9 @@
   <data name="Msg_Error_Run_As_Admin" xml:space="preserve">
     <value>Failed to obtain administrator privileges.</value>
   </data>
+  <data name="Msg_Error_Src_Too_Large" xml:space="preserve">
+    <value>This window is too large to capture.</value>
+  </data>
   <data name="Msg_Error_Vsync_Off_Not_Supported" xml:space="preserve">
     <value>This monitor does not support turning off VSync.</value>
   </data>
@@ -219,6 +222,9 @@
   </data>
   <data name="UI_Options_Advanced_Debug" xml:space="preserve">
     <value>Debug</value>
+  </data>
+  <data name="UI_Options_Advanced_Disable_Effect_Cache" xml:space="preserve">
+    <value>Disable Effect Cache</value>
   </data>
   <data name="UI_Options_Advanced_Logging_Level" xml:space="preserve">
     <value>Logging Level</value>

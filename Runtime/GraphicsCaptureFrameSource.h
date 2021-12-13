@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "FrameSourceBase.h"
 #include <winrt/Windows.Graphics.Capture.h>
+#include <Windows.Graphics.Capture.Interop.h>
 
 
 namespace winrt {
@@ -26,15 +27,20 @@ public:
 		return _output;
 	}
 
-	bool Update() override;
+	UpdateState Update() override;
 
 	bool HasRoundCornerInWin11() override {
 		return true;
 	}
 
 private:
-	D3D11_BOX _frameInWnd{};
+	bool _CaptureFromWindow(winrt::impl::com_ref<IGraphicsCaptureItemInterop> interop);
 
+	bool _CaptureFromMonitor(winrt::impl::com_ref<IGraphicsCaptureItemInterop> interop);
+
+	D3D11_BOX _frameBox{};
+
+	winrt::GraphicsCaptureItem _captureItem{ nullptr };
 	winrt::Direct3D11CaptureFramePool _captureFramePool{ nullptr };
 	winrt::GraphicsCaptureSession _captureSession{ nullptr };
 	winrt::IDirect3DDevice _wrappedD3DDevice{ nullptr };
