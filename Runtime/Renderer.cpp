@@ -557,13 +557,35 @@ void Renderer::_Render() {
 	// 所有渲染都使用三角形带拓扑
 	_d3dDC->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+	// 更新常量
+	if (!EffectDrawer::UpdateExprDynamicVars()) {
+		SPDLOG_LOGGER_ERROR(logger, "UpdateExprDynamicVars 失败");
+	}
+
 	if (state == FrameSourceBase::UpdateState::NewFrame) {
 		for (EffectDrawer& effect : _effects) {
 			effect.Draw();
 		}
 	} else {
-		// 此帧内容无变化，只渲染最后一个 pass
-		_effects.back().Draw(true);
+		// 此帧内容无变化
+		// 从第一个有动态常量的 Effect 开始渲染
+		// 如果没有则只渲染最后一个 Effect 的最后一个 pass
+
+		size_t i = 0;
+		for (; i < _effects.size(); ++i) {
+			if (_effects[i].HasDynamicConstants()) {
+				break;
+			}
+		}
+
+		if (i == _effects.size()) {
+			// 只渲染最后一个 Effect 的最后一个 pass
+			_effects.back().Draw(true);
+		} else {
+			for (; i < _effects.size(); ++i) {
+				_effects[i].Draw();
+			}
+		}
 	}
 
 	if (App::GetInstance().IsShowFPS()) {
@@ -581,9 +603,12 @@ void Renderer::_Render() {
 
 bool Renderer::_CheckSrcState() {
 	HWND hwndSrc = App::GetInstance().GetHwndSrc();
-	if (GetForegroundWindow() != hwndSrc) {
-		SPDLOG_LOGGER_INFO(logger, "前台窗口已改变");
-		return false;
+
+	if (!App::GetInstance().IsBreakpointMode()) {
+		if (GetForegroundWindow() != hwndSrc) {
+			SPDLOG_LOGGER_INFO(logger, "前台窗口已改变");
+			return false;
+		}
 	}
 
 	if (Utils::GetWindowShowCmd(hwndSrc) != SW_NORMAL) {
