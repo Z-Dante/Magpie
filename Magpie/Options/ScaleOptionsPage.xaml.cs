@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.IO;
 
 
 namespace Magpie.Options {
@@ -14,7 +15,7 @@ namespace Magpie.Options {
 	public partial class ScaleOptionsPage : Page {
 		private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
 
-		private static readonly float[] cursorZoomFactors = { 0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 2.5f, 3.0f, -1.0f };
+		private static readonly float[] cursorZoomFactors = { 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 2.5f, 3.0f, -1.0f };
 
 		private static readonly string[] graphicsAdapters = NativeMethods.GetAllGraphicsAdapters();
 
@@ -55,7 +56,13 @@ namespace Magpie.Options {
 			}
 		}
 
-		private void BtnScale_Click(object sender, RoutedEventArgs e) {
+		private void BtnOpenScaleConfig_Click(object sender, RoutedEventArgs e) {
+			if (!File.Exists(App.SCALE_MODELS_JSON_PATH)) {
+				Logger.Error("ScaleModels.json 不存在");
+				Debug.Assert(false);
+				return;
+			}
+
 			ProcessStartInfo psi = new(App.SCALE_MODELS_JSON_PATH) {
 				UseShellExecute = true
 			};

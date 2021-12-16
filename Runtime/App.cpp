@@ -18,7 +18,7 @@ static constexpr const wchar_t* HOST_WINDOW_TITLE = L"Magpie_Host";
 
 App::~App() {
 	MagUninitialize();
-	Windows::Foundation::Uninitialize();
+	winrt::uninit_apartment();
 }
 
 bool App::Initialize(HINSTANCE hInst) {
@@ -152,7 +152,7 @@ bool App::Run(
 	_renderer.reset(new Renderer());
 	if (!_renderer->Initialize()) {
 		SPDLOG_LOGGER_CRITICAL(logger, "初始化 Renderer 失败，正在清理");
-		DestroyWindow(_hwndHost);
+		Close();
 		_Run();
 		return false;
 	}
@@ -478,5 +478,7 @@ void App::Close() {
 	if (_hwndDDF) {
 		DestroyWindow(_hwndDDF);
 	}
-	DestroyWindow(_hwndHost);
+	if (_hwndHost) {
+		DestroyWindow(_hwndHost);
+	}
 }
