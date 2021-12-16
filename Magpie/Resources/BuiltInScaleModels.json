@@ -34,7 +34,7 @@
     "effects": [
       {
         "effect": "FSR_RCAS",
-        "sharpness": 0.5
+        "sharpness": 0.55
       },
       {
         "effect": "ACNet"
@@ -47,23 +47,23 @@
     ]
   },
   // Sharper = Higher contrast
-  {
-    "name": "ACNet (RCAS Sharp)",
-    "effects": [
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.87
-      },
-      {
-        "effect": "ACNet"
-      },
-      {
-        "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
+  // {
+  //   "name": "ACNet (RCAS Sharp)",
+  //   "effects": [
+  //     {
+  //       "effect": "FSR_RCAS",
+  //       "sharpness": 0.87
+  //     },
+  //     {
+  //       "effect": "ACNet"
+  //     },
+  //     {
+  //       "effect": "SSimDownscaler",
+  //       "scale": [ -1, -1 ],
+  //       "variant": 1
+  //     }
+  //   ]
+  // },
   // Anime4k = Best for anime type artworks. Does not lose any detail like ACNet. However does not look as clean as ACNet 
   {
     "name": "ANime4k",
@@ -95,27 +95,28 @@
       }
     ]
   },
-  {
-    "name": "Anime4K (Denoise+RCAS)",
-    "effects": [
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.3
-      },
-      {
-        "effect": "Anime4K_Upscale_Denoise_L"
-      },
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.2
-      },
-      {
-        "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
+  // Denoise is only helpful in case of noisy source. Usually not necessary for VNs
+  // {
+  //   "name": "Anime4K (Denoise+RCAS)",
+  //   "effects": [
+  //     {
+  //       "effect": "FSR_RCAS",
+  //       "sharpness": 0.3
+  //     },
+  //     {
+  //       "effect": "Anime4K_Upscale_Denoise_L"
+  //     },
+  //     {
+  //       "effect": "FSR_RCAS",
+  //       "sharpness": 0.2
+  //     },
+  //     {
+  //       "effect": "SSimDownscaler",
+  //       "scale": [ -1, -1 ],
+  //       "variant": 1
+  //     }
+  //   ]
+  // },
   // Restore is used to make images clearer and sharper after upscaling. Might produce ringing. 
   // VL has a very high performance cost but produces the best result. Use L or M for better performance but they will cause more artefacts.
   {
@@ -134,9 +135,9 @@
       }
     ]
   },
-  // Restore soft is a less aggresive version of Restore. Does not have any ringing artifcats. 
+  // Restore soft is a less aggresive version of Restore. Reduced ringing artifcats. 
   {
-    "name": "ANime4k (Restore Soft M)",
+    "name": "ANime4k (Restore Soft)",
     "effects": [
       {
         "effect": "Anime4K_Upscale_L"
@@ -151,6 +152,96 @@
       }
     ]
   },
+  {
+    "name": "FSRCNNXLineArt",
+    "effects": [
+      {
+        "effect": "FSRCNNX_LineArt"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  // {
+  //   "name": "FSRCNNXLineArt (RCAS)",
+  //   "effects": [
+  //     {
+  //       "effect": "FSR_RCAS",
+  //       "sharpness": 0.3
+  //     },
+  //     {
+  //       "effect": "FSRCNNX_LineArt"
+  //     },
+  //     {
+  //       "effect": "SSimDownscaler",
+  //       "scale": [ -1, -1 ],
+  //       "variant": 1
+  //     }
+  //   ]
+  // },
+  {
+    "name": "FSR",
+    "effects": [
+      {
+        "effect": "FSR_EASU",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "FSR_RCAS",
+        "sharpness": 0.87
+      }
+    ]
+  },
+  {
+    "name": "Lanczos",
+    "effects": [
+      {
+        "effect": "Lanczos",
+        "scale": [ -1, -1 ]
+      },
+      {
+        "effect": "AdaptiveSharpen",
+        "curveHeight": 0.3  
+      }
+    ]
+  },
+  // ACNet/Anime4K + FSR Models should only be used when the game resolution is <0.5x of the screen resolution. Since ACNet and Anime4k can only double the resolution. 
+  // FSR is used to scale the result up to the screen afterwards. Regular SSimDownscaler tends to look broken when it's used for scaling up instad of down.
+  // {
+  //   "name": "ACNet + FSR",
+  //   "effects": [
+  //     {
+  //       "effect": "ACNet"
+  //     },
+  //     {
+  //       "effect": "FSR_EASU",
+  //       "scale": [ -1, -1 ]
+  //     },
+  //     {
+  //       "effect": "FSR_RCAS",
+  //       "sharpness": 0.7
+  //     }
+  //   ]
+  // },
+  // {
+  //   "name": "ANime4k + FSR",
+  //   "effects": [
+  //     {
+  //       "effect": "Anime4K_Upscale_L"
+  //     },
+  //     {
+  //       "effect": "FSR_EASU",
+  //       "scale": [ -1, -1 ]
+  //     },
+  //     {
+  //       "effect": "FSR_RCAS",
+  //       "sharpness": 0.7
+  //     }
+  //   ]
+  // },
   // Light and Very Light presets are for low end hardware. Use normal presets if you have a capable rig.
   {
     "name": "Anime4K (Light)",
@@ -181,105 +272,6 @@
     ]
   },
   {
-    "name": "FSRCNNXLineArt",
-    "effects": [
-      {
-        "effect": "FSRCNNX_LineArt"
-      },
-      {
-        "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
-  {
-    "name": "FSRCNNXLineArt (RCAS)",
-    "effects": [
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.3
-      },
-      {
-        "effect": "FSRCNNX_LineArt"
-      },
-      {
-        "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      }
-    ]
-  },
-  {
-    "name": "AMD FidelityFX Super Resolution",
-    "effects": [
-      {
-        "effect": "FSR_EASU",
-        "scale": [ -1, -1 ]
-      },
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.87
-      }
-    ]
-  },
-  {
-    "name": "Lanczos",
-    "effects": [
-      {
-        "effect": "Lanczos",
-        "scale": [ -1, -1 ]
-      },
-      {
-        "effect": "AdaptiveSharpen",
-        "curveHeight": 0.3  
-      }
-    ]
-  },
-  {
-    "name": "xBRZ Freescale Multipass",
-    "effects": [
-      {
-        "effect": "xBRZ_Freescale_Multipass",
-        "scale": [ -1, -1 ] 
-      }
-    ]
-  },
-  // ACNet/Anime4K + FSR Models should only be used when the game resolution is <0.5x of the screen resolution. Since ACNet and Anime4k can only double the resolution. 
-  // FSR is used to scale the result up to the screen afterwards. Regular SSimDownscaler tends to look broken when it's used for scaling up instad of down.
-  {
-    "name": "ACNet + FSR",
-    "effects": [
-      {
-        "effect": "ACNet"
-      },
-      {
-        "effect": "FSR_EASU",
-        "scale": [ -1, -1 ]
-      },
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.7
-      }
-    ]
-  },
-  {
-    "name": "ANime4k + FSR",
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_L"
-      },
-      {
-        "effect": "FSR_EASU",
-        "scale": [ -1, -1 ]
-      },
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.7
-      }
-    ]
-  },
-  {
     "name": "ANime4k Denoise + FSR",
     "effects": [
       {
@@ -292,6 +284,41 @@
       {
         "effect": "FSR_RCAS",
         "sharpness": 0.7
+      }
+    ]
+  },
+  {
+    "name": "CRT Hylian",
+    "effects": [
+      {
+        "effect": "CRT_Hyllian",
+        "scale": [ -1, -1 ],
+      }
+    ]
+  },
+  {
+    "name": "CRT Easymode",
+    "effects": [
+      {
+        "effect": "CRT_Easymode",
+        "scale": [ -1, -1 ],
+      }
+    ]
+  },
+  {
+    "name": "CRT Geom",
+    "effects": [
+      {
+        "effect": "CRT_Geom",
+        "scale": [ -1, -1 ],
+        "interlace": 0,
+        "curvature":1,
+        "radius": 8,
+        "cornerSize": 0.01,
+        "lum": 1,
+        "CRTGamma": 2.4,
+        "monitorGamma": 4.4,
+        "scanlineWeight": 0.25
       }
     ]
   }
