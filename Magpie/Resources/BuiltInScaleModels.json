@@ -314,10 +314,10 @@
         "interlace": 0,
         "curvature":1,
         "radius": 8,
-        "cornerSize": 0.01,
+        "cornerSize": 0.005,
         "lum": 1,
         "CRTGamma": 2.4,
-        "monitorGamma": 4.4,
+        "monitorGamma": 4.8,
         "scanlineWeight": 0.25
       }
     ]
