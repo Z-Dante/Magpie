@@ -292,7 +292,7 @@
     "effects": [
       {
         "effect": "CRT_Hyllian",
-        "scale": [ -1, -1 ],
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -301,7 +301,7 @@
     "effects": [
       {
         "effect": "CRT_Easymode",
-        "scale": [ -1, -1 ],
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -312,13 +312,22 @@
         "effect": "CRT_Geom",
         "scale": [ -1, -1 ],
         "interlace": 0,
-        "curvature":1,
+        "curvature":0,
         "radius": 8,
         "cornerSize": 0.005,
         "lum": 1,
         "CRTGamma": 2.4,
-        "monitorGamma": 4.8,
+        "monitorGamma": 5.0,
         "scanlineWeight": 0.25
+      }
+    ]
+  },
+  {
+    "name": "CRT Cathode",
+    "effects": [
+      {
+        "effect": "CRT_Cathode",
+        "scale": [ -1, -1 ]
       }
     ]
   }
