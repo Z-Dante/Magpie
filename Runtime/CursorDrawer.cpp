@@ -388,10 +388,8 @@ void CursorDrawer::_StartCapture(POINT cursorPt) {
 		} else {
 			SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("获取光标移速失败"));
 		}
-
-		SPDLOG_LOGGER_INFO(logger, "已调整光标移速");
 	}
-
+	
 	// 全局隐藏光标
 	if (!MagShowSystemCursor(FALSE)) {
 		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("MagShowSystemCursor 失败"));
@@ -401,8 +399,8 @@ void CursorDrawer::_StartCapture(POINT cursorPt) {
 	const RECT& srcClientRect = App::GetInstance().GetSrcClientRect();
 	const RECT& hostRect = App::GetInstance().GetHostWndRect();
 	// 跳过黑边
-	cursorPt.x = std::clamp(cursorPt.x, hostRect.left + _destRect.left, hostRect.left + _destRect.right);
-	cursorPt.y = std::clamp(cursorPt.y, hostRect.top + _destRect.top, hostRect.top + _destRect.bottom);
+	cursorPt.x = std::clamp(cursorPt.x, hostRect.left + _destRect.left, hostRect.left + _destRect.right - 1);
+	cursorPt.y = std::clamp(cursorPt.y, hostRect.top + _destRect.top, hostRect.top + _destRect.bottom - 1);
 
 	double posX = double(cursorPt.x - hostRect.left - _destRect.left) / (_destRect.right - _destRect.left);
 	double posY = double(cursorPt.y - hostRect.top - _destRect.top) / (_destRect.bottom - _destRect.top);
@@ -426,37 +424,46 @@ void CursorDrawer::_StopCapture(POINT cursorPt) {
 	//
 	// 在有黑边的情况下自动将光标调整到全屏窗口外
 
-	if (App::GetInstance().IsAdjustCursorSpeed()) {
-		SystemParametersInfo(SPI_SETMOUSESPEED, 0, (PVOID)(intptr_t)_cursorSpeed, 0);
-	}
-
-	MagShowSystemCursor(TRUE);
-
 	// 移动光标位置
 	const RECT& srcClientRect = App::GetInstance().GetSrcClientRect();
 	const RECT& hostRect = App::GetInstance().GetHostWndRect();
 
-	if (cursorPt.x > srcClientRect.right) {
-		cursorPt.x = hostRect.right + cursorPt.x - srcClientRect.right;
+	if (cursorPt.x >= srcClientRect.right) {
+		cursorPt.x = hostRect.right + cursorPt.x - srcClientRect.right + 1;
 	} else if (cursorPt.x < srcClientRect.left) {
 		cursorPt.x = hostRect.left + cursorPt.x - srcClientRect.left;
 	} else {
 		double pos = double(cursorPt.x - srcClientRect.left) / (srcClientRect.right - srcClientRect.left);
-		cursorPt.x = std::lround(pos * (_destRect.right - _destRect.left)) + _destRect.left;
+		cursorPt.x = std::lround(pos * (_destRect.right - _destRect.left)) + _destRect.left + hostRect.left;
 	}
 
-	if (cursorPt.y > srcClientRect.bottom) {
-		cursorPt.y = hostRect.bottom + cursorPt.y - srcClientRect.bottom;
+	if (cursorPt.y >= srcClientRect.bottom) {
+		cursorPt.y = hostRect.bottom + cursorPt.y - srcClientRect.bottom + 1;
 	} else if (cursorPt.y < srcClientRect.top) {
 		cursorPt.y = hostRect.top + cursorPt.y - srcClientRect.top;
 	} else {
 		double pos = double(cursorPt.y - srcClientRect.top) / (srcClientRect.bottom - srcClientRect.top);
-		cursorPt.y = std::lround(pos * (_destRect.bottom - _destRect.top)) + _destRect.top;
+		cursorPt.y = std::lround(pos * (_destRect.bottom - _destRect.top)) + _destRect.top + hostRect.top;
 	}
 
-	SetCursorPos(cursorPt.x, cursorPt.y);
+	if (MonitorFromPoint(cursorPt, MONITOR_DEFAULTTONULL) != NULL) {
+		if (!MagShowSystemCursor(TRUE)) {
+			SPDLOG_LOGGER_ERROR(logger, "MagShowSystemCursor 失败");
+		}
 
-	_isUnderCapture = false;
+		SetCursorPos(cursorPt.x, cursorPt.y);
+
+		if (App::GetInstance().IsAdjustCursorSpeed()) {
+			SystemParametersInfo(SPI_SETMOUSESPEED, 0, (PVOID)(intptr_t)_cursorSpeed, 0);
+			// WGC 捕获模式会随机使 MagShowSystemCursor(TRUE) 失效，重新加载光标可以解决这个问题
+			SystemParametersInfo(SPI_SETCURSORS, 0, 0, 0);
+		}
+
+		_isUnderCapture = false;
+	} else {
+		ClipCursor(&srcClientRect);
+		ClipCursor(nullptr);
+	}
 }
 
 void CursorDrawer::Draw() {
