@@ -146,6 +146,15 @@
     <CopyFileToFolders Include="CAS.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="CRT_Cathode.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="CRT_Easymode.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="CRT_Hyllian.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <CopyFileToFolders Include="FSRCNNX.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
