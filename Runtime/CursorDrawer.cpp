@@ -131,15 +131,7 @@ bool CursorDrawer::Initialize(ComPtr<ID3D11Texture2D> renderTarget, const RECT& 
 	_clientScaleY = float(destRect.bottom - destRect.top) / srcSize.cy;
 	
 	if (!App::GetInstance().IsMultiMonitorMode() && !App::GetInstance().IsBreakpointMode()) {
-		// 非多屏幕模式下，将限制光标在窗口内
-
-		if (App::GetInstance().IsConfineCursorIn3DGames()) {
-			// 为了在 3D 游戏中起作用，每隔一定时间执行一次
-			if (!app.RegisterTimer(50, std::bind(ClipCursor, &App::GetInstance().GetSrcClientRect()))) {
-				SPDLOG_LOGGER_ERROR(logger, "注册定时器失败");
-				// 注册定时器失败则仅尝试一次
-			}
-		}
+		// 非多屏幕模式下，限制光标在窗口内
 		
 		if (!ClipCursor(&App::GetInstance().GetSrcClientRect())) {
 			SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("ClipCursor 失败"));
@@ -172,8 +164,10 @@ bool CursorDrawer::Initialize(ComPtr<ID3D11Texture2D> renderTarget, const RECT& 
 CursorDrawer::~CursorDrawer() {
 	if (App::GetInstance().IsMultiMonitorMode()) {
 		if (_isUnderCapture) {
-			POINT pt;
-			GetCursorPos(&pt);
+			POINT pt{};
+			if (!GetCursorPos(&pt)) {
+				SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetCursorPos 失败"));
+			}
 			_StopCapture(pt);
 		}
 	} else if (!App::GetInstance().IsBreakpointMode()) {
@@ -189,49 +183,69 @@ CursorDrawer::~CursorDrawer() {
 	SPDLOG_LOGGER_INFO(logger, "CursorDrawer 已析构");
 }
 
-void CursorDrawer::Update() {
-	if (!App::GetInstance().IsMultiMonitorMode()) {
-		return;
-	}
-
+void CursorDrawer::_DynamicClip(POINT cursorPt) {
 	const RECT& srcClientRect = App::GetInstance().GetSrcClientRect();
 	const RECT& hostRect = App::GetInstance().GetHostWndRect();
 
-	POINT cursorPt;
-	GetCursorPos(&cursorPt);
+	POINT hostPt{};
 
-	if (PtInRect(&srcClientRect, cursorPt) && _isUnderCapture) {
-		POINT hostPt{};
+	double t = double(cursorPt.x - srcClientRect.left) / (srcClientRect.right - srcClientRect.left);
+	hostPt.x = std::lround(t * (_destRect.right - _destRect.left)) + _destRect.left + hostRect.left;
 
-		double t = double(cursorPt.x - srcClientRect.left) / (srcClientRect.right - srcClientRect.left);
-		hostPt.x = std::lround(t * (_destRect.right - _destRect.left)) + _destRect.left + hostRect.left;
+	t = double(cursorPt.y - srcClientRect.top) / (srcClientRect.bottom - srcClientRect.top);
+	hostPt.y = std::lround(t * (_destRect.bottom - _destRect.top)) + _destRect.top + hostRect.top;
 
-		t = double(cursorPt.y - srcClientRect.top) / (srcClientRect.bottom - srcClientRect.top);
-		hostPt.y = std::lround(t * (_destRect.bottom - _destRect.top)) + _destRect.top + hostRect.top;
+	// MonitorFromPoint 非常快，无需优化
+	std::array<bool, 4> clips = {
+		!MonitorFromPoint({ hostRect.left - 1, hostPt.y }, MONITOR_DEFAULTTONULL),	// left
+		!MonitorFromPoint({ hostPt.x, hostRect.top - 1 }, MONITOR_DEFAULTTONULL),	// top
+		!MonitorFromPoint({ hostRect.right, hostPt.y }, MONITOR_DEFAULTTONULL),		// right
+		!MonitorFromPoint({ hostPt.x, hostRect.bottom }, MONITOR_DEFAULTTONULL)		// bottom
+	};
 
-		bool leftClip = !MonitorFromPoint({ hostRect.left - 1, hostPt.y }, MONITOR_DEFAULTTONULL);
-		bool rightClip = !MonitorFromPoint({ hostRect.right, hostPt.y }, MONITOR_DEFAULTTONULL);
-		bool topClip = !MonitorFromPoint({ hostPt.x, hostRect.top - 1 }, MONITOR_DEFAULTTONULL);
-		bool bottomClip = !MonitorFromPoint({ hostPt.x, hostRect.bottom }, MONITOR_DEFAULTTONULL);
+	// 开启“在 3D 游戏中限制光标”则每帧都限制一次光标
+	if (App::GetInstance().IsConfineCursorIn3DGames() || clips != _curClips) {
+		_curClips = clips;
 
 		RECT clipRect = {
-			leftClip ? srcClientRect.left : LONG_MIN,
-			topClip ? srcClientRect.top : LONG_MIN,
-			rightClip ? srcClientRect.right : LONG_MAX,
-			bottomClip ? srcClientRect.bottom : LONG_MAX
+			clips[0] ? srcClientRect.left : LONG_MIN,
+			clips[1] ? srcClientRect.top : LONG_MIN,
+			clips[2] ? srcClientRect.right : LONG_MAX,
+			clips[3] ? srcClientRect.bottom : LONG_MAX
 		};
 		ClipCursor(&clipRect);
 	}
+}
+
+bool CursorDrawer::Update() {
+	if (!App::GetInstance().IsMultiMonitorMode()) {
+		return true;
+	}
+
+	POINT cursorPt;
+	if (!GetCursorPos(&cursorPt)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetCursorPos 失败"));
+		return false;
+	}
 
 	if (_isUnderCapture) {
-		if (!PtInRect(&srcClientRect, cursorPt)) {
+		const RECT& srcClientRect = App::GetInstance().GetSrcClientRect();
+
+		if (PtInRect(&srcClientRect, cursorPt)) {
+			_DynamicClip(cursorPt);
+		} else {
 			_StopCapture(cursorPt);
 		}
 	} else {
+		const RECT& hostRect = App::GetInstance().GetHostWndRect();
+
 		if (PtInRect(&hostRect, cursorPt)) {
 			_StartCapture(cursorPt);
+			_DynamicClip(cursorPt);
 		}
 	}
+
+	return true;
 }
 
 bool GetHBmpBits32(HBITMAP hBmp, int& width, int& height, std::vector<BYTE>& pixels) {
@@ -457,13 +471,17 @@ void CursorDrawer::_StartCapture(POINT cursorPt) {
 	cursorPt.x = std::clamp(cursorPt.x, hostRect.left + _destRect.left, hostRect.left + _destRect.right - 1);
 	cursorPt.y = std::clamp(cursorPt.y, hostRect.top + _destRect.top, hostRect.top + _destRect.bottom - 1);
 
+	// 从全屏窗口映射到源窗口
 	double posX = double(cursorPt.x - hostRect.left - _destRect.left) / (_destRect.right - _destRect.left);
 	double posY = double(cursorPt.y - hostRect.top - _destRect.top) / (_destRect.bottom - _destRect.top);
 
-	SetCursorPos(
-		std::lround(posX * (srcClientRect.right - srcClientRect.left) + srcClientRect.left),
-		std::lround(posY * (srcClientRect.bottom - srcClientRect.top) + srcClientRect.top)
-	);
+	posX = posX * (srcClientRect.right - srcClientRect.left) + srcClientRect.left;
+	posY = posY * (srcClientRect.bottom - srcClientRect.top) + srcClientRect.top;
+
+	posX = std::clamp<double>(posX, srcClientRect.left, srcClientRect.right - 1);
+	posY = std::clamp<double>(posY, srcClientRect.top, srcClientRect.bottom - 1);
+
+	SetCursorPos(std::lround(posX), std::lround(posY));
 
 	_isUnderCapture = true;
 }
@@ -480,6 +498,7 @@ void CursorDrawer::_StopCapture(POINT cursorPt) {
 	// 在有黑边的情况下自动将光标调整到全屏窗口外
 
 	ClipCursor(nullptr);
+	_curClips = {};
 
 	const RECT& srcClientRect = App::GetInstance().GetSrcClientRect();
 	const RECT& hostRect = App::GetInstance().GetHostWndRect();
@@ -518,11 +537,19 @@ void CursorDrawer::_StopCapture(POINT cursorPt) {
 }
 
 void CursorDrawer::Draw() {
-	if (App::GetInstance().IsNoCursor() || (App::GetInstance().IsMultiMonitorMode() &&
-		!_isUnderCapture && !App::GetInstance().IsBreakpointMode())
-	) {
+	if (App::GetInstance().IsNoCursor()) {
 		// 不绘制光标
 		return;
+	}
+
+	if (App::GetInstance().IsMultiMonitorMode()) {
+		// 多屏幕模式下不处于捕获状态则不绘制光标
+		if (!_isUnderCapture) {
+			return;
+		}
+	} else if (!App::GetInstance().IsBreakpointMode() && App::GetInstance().IsConfineCursorIn3DGames()) {
+		// 开启“在 3D 游戏中限制光标”则每帧都限制一次光标
+		ClipCursor(&App::GetInstance().GetSrcClientRect());
 	}
 
 	CURSORINFO ci{};
