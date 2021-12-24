@@ -95,6 +95,19 @@
       }
     ]
   },
+  {
+    "name": "ANime4kGAN_S",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_GAN_x2_S"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
   // Denoise is only helpful in case of noisy source. Usually not necessary for VNs
   // {
   //   "name": "Anime4K (Denoise+RCAS)",
