@@ -58,14 +58,17 @@ https://imgur.com/a/lnBpL0q
 * Some Comparison of CRT shaders:      
 Kichikuou Rance : https://imgsli.com/ODY5MjE/0/1      
 Ikusa Megami Zero: https://imgsli.com/ODY5MjU/0/1      
-CPS1 Cadillacs and Dinosaurs: https://imgsli.com/ODcwMzk/0/1      
+CPS1 Cadillacs and Dinosaurs: https://imgsli.com/ODcwMzk/0/1     
+
+* Anime4kGAN vs Anime4k 720p -> 1080p:
+https://imgsli.com/ODczODg/2/3 
 
 #######################################################################################    
 **RECOMMENDED PRESETS**
 
-1. Anime4K
-2. ACNet (RCAS)
-3. Anime4K (RCAS)
+1. Anime4kGAN 
+2. Anime4K
+3. ACNet (RCAS)
 
 * Anime4k (Light) - Only if you have low end hardware and are facing performance issues.
 
