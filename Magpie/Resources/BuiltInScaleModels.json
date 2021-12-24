@@ -79,6 +79,19 @@
     ]
   },
   {
+    "name": "ANime4k GAN (S)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_GAN_x2_S"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
     "name": "ANime4k (RCAS)",
     "effects": [
       {
