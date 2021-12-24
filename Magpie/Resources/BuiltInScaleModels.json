@@ -79,15 +79,18 @@
     ]
   },
   {
-    "name": "ANime4k GAN (S)",
+    "name": "ANime4k Thinlines",
     "effects": [
       {
-        "effect": "Anime4K_Upscale_GAN_x2_S"
+        "effect": "Anime4K_Upscale_L"
       },
       {
         "effect": "SSimDownscaler",
         "scale": [ -1, -1 ],
         "variant": 1
+      },
+      {
+        "effect": "Anime4K_Thin_HQ"
       }
     ]
   },
@@ -100,6 +103,19 @@
       },
       {
         "effect": "Anime4K_Upscale_L"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ],
+        "variant": 1
+      }
+    ]
+  },
+  {
+    "name": "ANime4kGAN (S)",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_GAN_x2_S"
       },
       {
         "effect": "SSimDownscaler",
