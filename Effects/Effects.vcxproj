@@ -265,11 +265,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="NIS_AR.hlsl">
-      <FileType>Document</FileType>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="CRT_Easymode.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
@@ -306,6 +301,16 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="Anime4K_Thin_HQ.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="LumaSharpen.hlsl">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="FineSharp.hlsl">
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>

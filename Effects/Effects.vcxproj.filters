@@ -56,7 +56,6 @@
     <CopyFileToFolders Include="NIS_Coef_Scale.dds" />
     <CopyFileToFolders Include="NIS_Coef_USM.dds" />
     <CopyFileToFolders Include="NVSharpen.hlsl" />
-    <CopyFileToFolders Include="NIS_AR.hlsl" />
     <CopyFileToFolders Include="CRT_Easymode.hlsl" />
     <CopyFileToFolders Include="CRT_Geom.hlsl" />
     <CopyFileToFolders Include="CRT_Lottes.hlsl" />
@@ -66,5 +65,7 @@
     <CopyFileToFolders Include="Anime4K_Upscale_S.hlsl" />
     <CopyFileToFolders Include="Anime4K_Upscale_Denoise_L.hlsl" />
     <CopyFileToFolders Include="Anime4K_Thin_HQ.hlsl" />
+    <CopyFileToFolders Include="LumaSharpen.hlsl" />
+    <CopyFileToFolders Include="FineSharp.hlsl" />
   </ItemGroup>
 </Project>
