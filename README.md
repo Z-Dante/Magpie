@@ -99,10 +99,7 @@ Or grab automated builds from - https://github.com/Z-Dante/Magpie/actions (click
 ################################# **ORIGINAL README** ####################################   
 # MAGPIE
 
-Magpie 可以将任意窗口放大至全屏，支持多种高级缩放算法，如 Lanczos、[Anime4K](https://github.com/bloc97/Anime4K)、[FSR](https://github.com/GPUOpen-Effects/FidelityFX-FSR)、[FSRCNNX](https://github.com/igv/FSRCNN-TensorFlow)等。
-
-
-主要用于游戏窗口的放大显示，适用于不支持全屏模式，或者内置的全屏模式会使画面模糊的情况。
+Magpie 可以将任意窗口放大至全屏，支持大量缩放算法/滤镜。主要用于游戏窗口的放大显示，适用于不支持全屏模式，或者内置的全屏模式会使画面模糊的情况。
 
 使用中遇到问题请提交 issue。
 
@@ -158,7 +155,7 @@ Magpie 可以将任意窗口放大至全屏，支持多种高级缩放算法，�
 ## 系统需求
 
 1. Windows 10/11
-2. DirectX 功能级别 11
+2. DirectX 功能级别 10
 3. [.NET 6 运行时](https://dotnet.microsoft.com/download)
 4. [MSVC 2015-2022 运行时](https://docs.microsoft.com/cpp/windows/latest-supported-vc-redist)
 
