@@ -46,8 +46,8 @@ applies one by one as it scales. *The configuration file supports json
 comments, including line comments* `// `*and block comments* `/**/`*.*
 
 Magpie has a large number of effects built in for use in combinations,
-most of them provide parametric options to customize the behavior. All
-effects are stored in the effects folder, and if you know HLSL you can
+most of them provide various parameters options to customize its behavior. All
+effects are stored in the "effects" folder, and if you know HLSL you can
 easily add any effect you want, see [Custom
 Effects](https://github.com/Blinue/Magpie/wiki/%E8%87%AA%E5%AE%9A%E4%B9%89%E6%95%88%E6%9E%9C%EF%BC%88MagpieFX%EF%BC%89).
 
@@ -64,7 +64,7 @@ Introduction of built-in effects
 ---------------------------------
 
 -   ACNet: port of [ACNetGLSL.](https://github.com/TianZerL/ACNetGLSL)
-    Suitable for scaling of animation style images with strong noise
+    Suitable for scaling of anime style images with strong noise
     reduction effect
     -   Output size: twice the input
  
