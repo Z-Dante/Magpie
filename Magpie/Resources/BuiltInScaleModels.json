@@ -85,24 +85,7 @@
         "effect": "Anime4K_Upscale_L"
       },
       {
-        "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
-      },
-      {
         "effect": "Anime4K_Thin_HQ"
-      }
-    ]
-  },
-  {
-    "name": "ANime4k (RCAS)",
-    "effects": [
-      {
-        "effect": "FSR_RCAS",
-        "sharpness": 0.5
-      },
-      {
-        "effect": "Anime4K_Upscale_L"
       },
       {
         "effect": "SSimDownscaler",
@@ -124,61 +107,38 @@
       }
     ]
   },
-  // Denoise is only helpful in case of noisy source. Usually not necessary for VNs
-  // {
-  //   "name": "Anime4K (Denoise+RCAS)",
-  //   "effects": [
-  //     {
-  //       "effect": "FSR_RCAS",
-  //       "sharpness": 0.3
-  //     },
-  //     {
-  //       "effect": "Anime4K_Upscale_Denoise_L"
-  //     },
-  //     {
-  //       "effect": "FSR_RCAS",
-  //       "sharpness": 0.2
-  //     },
-  //     {
-  //       "effect": "SSimDownscaler",
-  //       "scale": [ -1, -1 ],
-  //       "variant": 1
-  //     }
-  //   ]
-  // },
   // Restore is used to make images clearer and sharper after upscaling. Might produce ringing. 
   // VL has a very high performance cost but produces the best result. Use L or M for better performance but they will cause more artefacts.
   {
-    "name": "ANime4k (Restore VL)",
+    "name": "ANime4kGAN (S) Restore Soft",
     "effects": [
       {
-        "effect": "Anime4K_Upscale_L"
-      },
-      {
-        "effect": "Anime4K_Restore_VL"
+        "effect": "Anime4K_Upscale_GAN_x2_S"
       },
       {
         "effect": "SSimDownscaler",
         "scale": [ -1, -1 ],
         "variant": 1
-      }
-    ]
-  },
-  // Restore soft is a less aggresive version of Restore. Reduced ringing artifcats. 
-  {
-    "name": "ANime4k (Restore Soft)",
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_L"
       },
       {
         "effect": "Anime4K_Restore_Soft_M"
       },
+    ]
+  },
+  {
+    "name": "ANime4kGAN (S) Restore VL",
+    "effects": [
+      {
+        "effect": "Anime4K_Upscale_GAN_x2_S"
+      },
       {
         "effect": "SSimDownscaler",
         "scale": [ -1, -1 ],
         "variant": 1
-      }
+      },
+      {
+        "effect": "Anime4K_Restore_VL"
+      },
     ]
   },
   {
@@ -237,40 +197,6 @@
       }
     ]
   },
-  // ACNet/Anime4K + FSR Models should only be used when the game resolution is <0.5x of the screen resolution. Since ACNet and Anime4k can only double the resolution. 
-  // FSR is used to scale the result up to the screen afterwards. Regular SSimDownscaler tends to look broken when it's used for scaling up instad of down.
-  // {
-  //   "name": "ACNet + FSR",
-  //   "effects": [
-  //     {
-  //       "effect": "ACNet"
-  //     },
-  //     {
-  //       "effect": "FSR_EASU",
-  //       "scale": [ -1, -1 ]
-  //     },
-  //     {
-  //       "effect": "FSR_RCAS",
-  //       "sharpness": 0.7
-  //     }
-  //   ]
-  // },
-  // {
-  //   "name": "ANime4k + FSR",
-  //   "effects": [
-  //     {
-  //       "effect": "Anime4K_Upscale_L"
-  //     },
-  //     {
-  //       "effect": "FSR_EASU",
-  //       "scale": [ -1, -1 ]
-  //     },
-  //     {
-  //       "effect": "FSR_RCAS",
-  //       "sharpness": 0.7
-  //     }
-  //   ]
-  // },
   // Light and Very Light presets are for low end hardware. Use normal presets if you have a capable rig.
   {
     "name": "Anime4K (Light)",
