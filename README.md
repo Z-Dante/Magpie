@@ -18,50 +18,42 @@
 **SOME COMPARISONS / UPSCALING RESULTS WITH VARIOUS PRESETS:**
 
 * Little Busters English Edition   
-Original 720p: https://imgur.com/d44YvuW    
-Upscaled: https://imgsli.com/Nzg3NTY    
-
-* Muramasa   
-Original (1024x576): https://imgur.com/cLKNMUT    
-Upscaled: https://imgsli.com/Nzg3NzM/
-
-* Chaos;Head (Chaotic;Head)    
-Original 800x600: https://imgur.com/pscXt9U    
-Upscaled: https://imgsli.com/Nzg3NTg/    
-
+  - Original 720p: https://imgur.com/d44YvuW    
+  - Upscaled: https://imgsli.com/Nzg3NTY    
+* Muramasa 
+  - Original (1024x576): https://imgur.com/cLKNMUT 
+  - Upscaled: https://imgsli.com/Nzg3NzM/
+* Chaos;Head (Chaotic;Head) 
+  - Original 800x600: https://imgur.com/pscXt9U 
+  - Upscaled: https://imgsli.com/Nzg3NTg/ 
 * Sengoku Rance   
-Original 800x600: https://imgur.com/45CUSTX    
-Upscaled: https://imgsli.com/Nzg3NjY    
-Original 2: https://imgur.com/26OyiIv    
-Upscaled 2: https://imgsli.com/Nzg3Njg    
-
+  - Original 800x600: https://imgur.com/45CUSTX    
+  - Upscaled: https://imgsli.com/Nzg3NjY    
+  - Original 2: https://imgur.com/26OyiIv    
+  - Upscaled 2: https://imgsli.com/Nzg3Njg    
 * Majikoi S
-Original 800x600: https://imgur.com/F7cE1cy    
-Upscaled: https://imgsli.com/Nzg3NzA    
-
+  - Original 800x600: https://imgur.com/F7cE1cy    
+  - Upscaled: https://imgsli.com/Nzg3NzA    
 * Hoshi Ori Yume Mirai
-Original 720p: https://imgur.com/fRTG8YQ    
-Upscaled: https://imgsli.com/Nzg3NjQ    
-
+  - Original 720p: https://imgur.com/fRTG8YQ    
+  - Upscaled: https://imgsli.com/Nzg3NjQ    
 * Utawarerumono: Prelude to the Fallen 720p -> 1080p:     
-https://imgsli.com/Nzg3NTU
-
+  - https://imgsli.com/Nzg3NTU
 * Daitoshokan no Hitsujikai 720p -> 1080p:     
-https://imgsli.com/Nzg3NzQ
-
+  - https://imgsli.com/Nzg3NzQ
 * Kinkoi 1080 -> 1440p:     
-https://imgsli.com/Nzg3NzY
-
+  - https://imgsli.com/Nzg3NzY
 * Old v0.6.0 ACNet Screenshots from various VNs:     
-https://imgur.com/a/lnBpL0q
-
+  - https://imgur.com/a/lnBpL0q
 * Some Comparison of CRT shaders:      
-Kichikuou Rance : https://imgsli.com/ODY5MjE/0/1      
-Ikusa Megami Zero: https://imgsli.com/ODY5MjU/0/1      
-CPS1 Cadillacs and Dinosaurs: https://imgsli.com/ODcwMzk/0/1     
-
+  - Kichikuou Rance : https://imgsli.com/ODY5MjE/0/1      
+  - Ikusa Megami Zero: https://imgsli.com/ODY5MjU/0/1      
+  - CPS1 Cadillacs and Dinosaurs: https://imgsli.com/ODcwMzk/0/1     
 * Anime4kGAN vs Anime4k 720p -> 1080p:
-https://imgsli.com/ODczODg/2/3 
+  - White Album2: https://imgsli.com/ODczODg/2/3 
+* Anime4kGAN Restore 720p -> 1080p:
+	- Kunado Kokuki 720p -> 1080p: https://imgsli.com/ODc1NTQ/1/5
+	- Duel Savior 480p->1080p: https://imgsli.com/ODc2MTE/1/5
 
 #######################################################################################    
 **RECOMMENDED PRESETS**
