@@ -116,13 +116,14 @@
         "effect": "Anime4K_Upscale_GAN_x2_S"
       },
       {
-        "effect": "SSimDownscaler",
+        "effect": "Bicubic",
         "scale": [ -1, -1 ],
-        "variant": 1
+        "paramB": 0.0,
+        "paramC": 0.5
       },
       {
         "effect": "Anime4K_Restore_Soft_M"
-      },
+      }
     ]
   },
   {
@@ -132,13 +133,14 @@
         "effect": "Anime4K_Upscale_GAN_x2_S"
       },
       {
-        "effect": "SSimDownscaler",
+        "effect": "Bicubic",
         "scale": [ -1, -1 ],
-        "variant": 1
+        "paramB": 0.0,
+        "paramC": 0.5
       },
       {
         "effect": "Anime4K_Restore_VL"
-      },
+      }
     ]
   },
   {
