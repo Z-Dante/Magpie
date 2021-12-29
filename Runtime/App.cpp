@@ -222,12 +222,6 @@ bool App::Run(
 		}
 	}
 
-	if (!IsBreakpointMode() && IsDisableDirectFlip()) {
-		if (!_DisableDirectFlip()) {
-			SPDLOG_LOGGER_ERROR(logger, "_DisableDirectFlip 失败");
-		}
-	}
-
 	_Run();
 
 	return true;
@@ -249,6 +243,15 @@ void App::_Run() {
 		}
 
 		_renderer->Render();
+
+		// 第二帧（等待时或完成后）创建 DDF 窗口
+		// 如果在 Run 中创建会有短暂的灰屏
+		// 选择第二帧的原因：当 GetFrameCount() 返回 1 时第一帧可能处于等待状态而没有渲染，见 Renderer::Render()
+		if (_renderer->GetTimer().GetFrameCount() == 2 && !_hwndDDF && IsDisableDirectFlip() && !IsBreakpointMode()) {
+			if (!_DisableDirectFlip()) {
+				SPDLOG_LOGGER_ERROR(logger, "_DisableDirectFlip 失败");
+			}
+		}
 	}
 }
 
@@ -473,7 +476,7 @@ bool App::_DisableDirectFlip() {
 		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetLayeredWindowAttributes 失败"));
 	}
 
-	if (_captureMode == 0 || _captureMode == 1) {
+	if (_frameSource->IsScreenCapture()) {
 		const RTL_OSVERSIONINFOW& version = Utils::GetOSVersion();
 		if (Utils::CompareVersion(version.dwMajorVersion, version.dwMinorVersion, version.dwBuildNumber, 10, 0, 19041) >= 0) {
 			// 使 DDF 窗口无法被捕获到
