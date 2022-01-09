@@ -18,6 +18,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2.4.0
+
+    - name: Load Conan cache
+      uses: actions/cache@v2
+      with:
+        path: ./.conan/data
+        key: ${{ runner.os }}-conan-${{ hashFiles('**/conanfile.txt') }}
     
     - name: Restore NuGet packages
       run: nuget restore

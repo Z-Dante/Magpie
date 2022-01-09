@@ -65,11 +65,64 @@ static ComPtr<IDXGIOutput1> GetDXGIOutput(HMONITOR hMonitor) {
 	return nullptr;
 }
 
+
+HANDLE hSharedTex = NULL;
+
+DesktopDuplicationFrameSource::~DesktopDuplicationFrameSource() {
+	_exiting = true;
+	WaitForSingleObject(_hDDPThread, 1000);
+}
+
 bool DesktopDuplicationFrameSource::Initialize() {
 	// WDA_EXCLUDEFROMCAPTURE 只在 Win10 v2004 及更新版本中可用
 	const RTL_OSVERSIONINFOW& version = Utils::GetOSVersion();
 	if (Utils::CompareVersion(version.dwMajorVersion, version.dwMinorVersion, version.dwBuildNumber, 10, 0, 19041) < 0) {
 		SPDLOG_LOGGER_ERROR(logger, "当前操作系统无法使用 Desktop Duplication");
+		return false;
+	}
+
+	RECT srcClientRect;
+	if (!Utils::GetClientScreenRect(App::GetInstance().GetHwndSrcClient(), srcClientRect)) {
+		SPDLOG_LOGGER_ERROR(logger, "GetClientScreenRect 失败");
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC desc{};
+	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.Width = srcClientRect.right - srcClientRect.left;
+	desc.Height = srcClientRect.bottom - srcClientRect.top;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.SampleDesc.Count = 1;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_output);
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
+		return false;
+	}
+
+	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
+	hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_sharedTex);
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
+		return false;
+	}
+
+	hr = _sharedTex.As<IDXGIKeyedMutex>(&_sharedTexMutex);
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("检索 IDXGIKeyedMutex 失败", hr));
+		return false;
+	}
+
+	ComPtr<IDXGIResource> sharedDxgiRes;
+	hr = _sharedTex.As<IDXGIResource>(&sharedDxgiRes);
+	if (FAILED(hr)) {
+		return false;
+	}
+
+	hr = sharedDxgiRes->GetSharedHandle(&hSharedTex);
+	if (FAILED(hr)) {
 		return false;
 	}
 
@@ -98,40 +151,57 @@ bool DesktopDuplicationFrameSource::Initialize() {
 		return false;
 	}
 
-	HRESULT hr = output->DuplicateOutput(
-		App::GetInstance().GetRenderer().GetD3DDevice().Get(),
+	UINT createDeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+	D3D_FEATURE_LEVEL featureLevels[] = {
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+		D3D_FEATURE_LEVEL_10_1,
+		D3D_FEATURE_LEVEL_10_0,
+		// 不支持功能级别 9.x，但这里加上没坏处
+		D3D_FEATURE_LEVEL_9_3,
+		D3D_FEATURE_LEVEL_9_2,
+		D3D_FEATURE_LEVEL_9_1,
+	};
+	UINT nFeatureLevels = ARRAYSIZE(featureLevels);
+
+	D3D_FEATURE_LEVEL fl;
+
+	hr = D3D11CreateDevice(
+		App::GetInstance().GetRenderer().GetGraphicsAdapter().Get(),
+		D3D_DRIVER_TYPE_UNKNOWN,
+		nullptr,
+		createDeviceFlags,
+		featureLevels,
+		nFeatureLevels,
+		D3D11_SDK_VERSION,
+		&_ddpD3dDevice,
+		&fl,
+		&_ddpD3dDC
+	);
+
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_WARN(logger, "D3D11CreateDevice 失败");
+		return false;
+	}
+
+	hr = _ddpD3dDevice->OpenSharedResource(hSharedTex, IID_PPV_ARGS(&_ddpSharedTex));
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("OpenSharedResource 失败", hr));
+		return 0;
+	}
+
+	hr = _ddpSharedTex.As<IDXGIKeyedMutex>(&_ddpSharedTexMutex);
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("检索 IDXGIKeyedMutex 失败", hr));
+		return 0;
+	}
+
+	hr = output->DuplicateOutput(
+		_ddpD3dDevice.Get(),
 		_outputDup.ReleaseAndGetAddressOf()
 	);
 	if (FAILED(hr)) {
 		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("DuplicateOutput 失败", hr));
-		return false;
-	}
-
-	RECT srcClientRect;
-	if (!Utils::GetClientScreenRect(App::GetInstance().GetHwndSrcClient(), srcClientRect)) {
-		SPDLOG_LOGGER_ERROR(logger, "GetClientScreenRect 失败");
-		return false;
-	}
-
-	D3D11_TEXTURE2D_DESC desc{};
-	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	desc.Width = srcClientRect.right - srcClientRect.left;
-	desc.Height = srcClientRect.bottom - srcClientRect.top;
-	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.SampleDesc.Count = 1;
-	desc.SampleDesc.Quality = 0;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_output);
-	if (FAILED(hr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
-		return false;
-	}
-
-	// 使全屏窗口无法被捕获到
-	if (!SetWindowDisplayAffinity(App::GetInstance().GetHwndHost(), WDA_EXCLUDEFROMCAPTURE)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetWindowDisplayAffinity 失败"));
 		return false;
 	}
 
@@ -152,92 +222,154 @@ bool DesktopDuplicationFrameSource::Initialize() {
 		1
 	};
 
+	// 使全屏窗口无法被捕获到
+	if (!SetWindowDisplayAffinity(App::GetInstance().GetHwndHost(), WDA_EXCLUDEFROMCAPTURE)) {
+		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetWindowDisplayAffinity 失败"));
+		return false;
+	}
+	
+
+	_hDDPThread = CreateThread(nullptr, 0, _DDPThreadProc, this, 0, nullptr);
+	if (!_hDDPThread) {
+		return false;
+	}
+
 	SPDLOG_LOGGER_INFO(logger, "DesktopDuplicationFrameSource 初始化完成");
 	return true;
 }
 
+
 FrameSourceBase::UpdateState DesktopDuplicationFrameSource::Update() {
-	DXGI_OUTDUPL_FRAME_INFO info;
-	ComPtr<IDXGIResource> dxgiRes;
-	
-	HRESULT hr = _outputDup->AcquireNextFrame(0, &info, &dxgiRes);
-
-	if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
-		return _firstFrame ? UpdateState::Waiting : UpdateState::NoUpdate;
-	}
-
-	if (FAILED(hr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("AcquireNextFrame 失败", hr));
-		return UpdateState::Error;
-	}
-
-	Utils::ScopeExit se([this]() {
-		_outputDup->ReleaseFrame();
-	});
-
-	bool noUpdate = true;
-
-	// 检索 move rects 和 dirty rects
-	// 这些区域如果和窗口客户区有重叠则表明画面有变化
-	if (info.TotalMetadataBufferSize) {
-		if (info.TotalMetadataBufferSize > _dupMetaData.size()) {
-			_dupMetaData.resize(info.TotalMetadataBufferSize);
-		}
-
-		UINT bufSize = info.TotalMetadataBufferSize;
-
-		// move rects
-		hr = _outputDup->GetFrameMoveRects(bufSize, (DXGI_OUTDUPL_MOVE_RECT*)_dupMetaData.data(), &bufSize);
-		if (FAILED(hr)) {
-			SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("GetFrameMoveRects 失败", hr));
-			return UpdateState::Error;
-		}
-
-		UINT nRect = bufSize / sizeof(DXGI_OUTDUPL_MOVE_RECT);
-		for (UINT i = 0; i < nRect; ++i) {
-			const DXGI_OUTDUPL_MOVE_RECT& rect = ((DXGI_OUTDUPL_MOVE_RECT*)_dupMetaData.data())[i];
-			if (Utils::CheckOverlap(_srcClientInMonitor, rect.DestinationRect)) {
-				noUpdate = false;
-				break;
-			}
-		}
-
-		if (noUpdate) {
-			bufSize = info.TotalMetadataBufferSize;
-
-			// dirty rects
-			hr = _outputDup->GetFrameDirtyRects(bufSize, (RECT*)_dupMetaData.data(), &bufSize);
-			if (FAILED(hr)) {
-				SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("GetFrameDirtyRects 失败", hr));
-				return UpdateState::Error;
-			}
-
-			nRect = bufSize / sizeof(RECT);
-			for (UINT i = 0; i < nRect; ++i) {
-				const RECT& rect = ((RECT*)_dupMetaData.data())[i];
-				if (Utils::CheckOverlap(_srcClientInMonitor, rect)) {
-					noUpdate = false;
-					break;
-				}
-			}
-		}
-	}
-
-	if (noUpdate) {
-		return _firstFrame ? UpdateState::Waiting : UpdateState::NoUpdate;
-	}
-
-	ComPtr<ID3D11Resource> d3dRes;
-	hr = dxgiRes.As<ID3D11Resource>(&d3dRes);
-	if (FAILED(hr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("从 IDXGIResource 检索 ID3D11Resource 失败", hr));
+	UINT newFrameState = _newFrameState.load();
+	if (newFrameState == 2) {
+		// 第一帧之前不渲染
+		return UpdateState::Waiting;
+	} else if (newFrameState == 0) {
 		return UpdateState::NoUpdate;
 	}
 
-	App::GetInstance().GetRenderer().GetD3DDC()->CopySubresourceRegion(
-		_output.Get(), 0, 0, 0, 0, d3dRes.Get(), 0, &_frameInMonitor);
+	HRESULT hr = _sharedTexMutex->AcquireSync(1, 0);
+	if (hr == static_cast<HRESULT>(WAIT_TIMEOUT)) {
+		return UpdateState::Waiting;
+	}
+	
+	if (FAILED(hr)) {
+		SPDLOG_LOGGER_ERROR(logger, "AcquireSync 失败");
+		return UpdateState::Error;
+	}
 
-	_firstFrame = false;
+	_newFrameState.store(0);
+
+	const auto& dc = App::GetInstance().GetRenderer().GetD3DDC();
+	dc->CopyResource(_output.Get(), _sharedTex.Get());
+
+	_sharedTexMutex->ReleaseSync(0);
 
 	return UpdateState::NewFrame;
+}
+
+DWORD WINAPI DesktopDuplicationFrameSource::_DDPThreadProc(LPVOID lpThreadParameter) {
+	DesktopDuplicationFrameSource& that = *(DesktopDuplicationFrameSource*)lpThreadParameter;
+
+	DXGI_OUTDUPL_FRAME_INFO info{};
+	ComPtr<IDXGIResource> dxgiRes;
+	std::vector<BYTE> dupMetaData;
+
+	bool waitToProcessCurrentFrame = false;
+
+	while (!that._exiting.load()) {
+		if (!waitToProcessCurrentFrame) {
+			if (dxgiRes) {
+				that._outputDup->ReleaseFrame();
+			}
+			HRESULT hr = that._outputDup->AcquireNextFrame(500, &info, &dxgiRes);
+			if (hr == DXGI_ERROR_WAIT_TIMEOUT) {
+				continue;
+			}
+
+			if (FAILED(hr)) {
+				SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("AcquireNextFrame 失败", hr));
+				continue;
+			}
+
+			bool noUpdate = true;
+
+			// 检索 move rects 和 dirty rects
+			// 这些区域如果和窗口客户区有重叠则表明画面有变化
+			if (info.TotalMetadataBufferSize) {
+				if (info.TotalMetadataBufferSize > dupMetaData.size()) {
+					dupMetaData.resize(info.TotalMetadataBufferSize);
+				}
+
+				UINT bufSize = info.TotalMetadataBufferSize;
+
+				// move rects
+				hr = that._outputDup->GetFrameMoveRects(bufSize, (DXGI_OUTDUPL_MOVE_RECT*)dupMetaData.data(), &bufSize);
+				if (FAILED(hr)) {
+					SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("GetFrameMoveRects 失败", hr));
+					continue;
+				}
+
+				UINT nRect = bufSize / sizeof(DXGI_OUTDUPL_MOVE_RECT);
+				for (UINT i = 0; i < nRect; ++i) {
+					const DXGI_OUTDUPL_MOVE_RECT& rect = ((DXGI_OUTDUPL_MOVE_RECT*)dupMetaData.data())[i];
+					if (Utils::CheckOverlap(that._srcClientInMonitor, rect.DestinationRect)) {
+						noUpdate = false;
+						break;
+					}
+				}
+
+				if (noUpdate) {
+					bufSize = info.TotalMetadataBufferSize;
+
+					// dirty rects
+					hr = that._outputDup->GetFrameDirtyRects(bufSize, (RECT*)dupMetaData.data(), &bufSize);
+					if (FAILED(hr)) {
+						SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("GetFrameDirtyRects 失败", hr));
+						continue;
+					}
+
+					nRect = bufSize / sizeof(RECT);
+					for (UINT i = 0; i < nRect; ++i) {
+						const RECT& rect = ((RECT*)dupMetaData.data())[i];
+						if (Utils::CheckOverlap(that._srcClientInMonitor, rect)) {
+							noUpdate = false;
+							break;
+						}
+					}
+				}
+			}
+
+			if (noUpdate) {
+				continue;
+			}
+		}
+
+		HRESULT hr = that._ddpSharedTexMutex->AcquireSync(0, 100);
+		if (hr == static_cast<HRESULT>(WAIT_TIMEOUT)) {
+			waitToProcessCurrentFrame = true;
+			continue;
+		}
+
+		waitToProcessCurrentFrame = false;
+
+		if (FAILED(hr)) {
+			SPDLOG_LOGGER_ERROR(logger, "AcquireSync 失败");
+			continue;
+		}
+
+		ComPtr<ID3D11Resource> d3dRes;
+		hr = dxgiRes.As<ID3D11Resource>(&d3dRes);
+		if (FAILED(hr)) {
+			SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("从 IDXGIResource 检索 ID3D11Resource 失败", hr));
+			that._ddpSharedTexMutex->ReleaseSync(1);
+			continue;
+		}
+
+		that._ddpD3dDC->CopySubresourceRegion(that._ddpSharedTex.Get(), 0, 0, 0, 0, d3dRes.Get(), 0, &that._frameInMonitor);
+		that._ddpSharedTexMutex->ReleaseSync(1);
+		that._newFrameState.store(1);
+	}
+
+	return 0;
 }
