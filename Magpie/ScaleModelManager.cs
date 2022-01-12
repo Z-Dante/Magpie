@@ -1,7 +1,8 @@
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Windows;
 using System.Windows.Resources;
@@ -67,21 +68,29 @@ namespace Magpie {
 
 			try {
 				// 解析缩放配置
-				scaleModels = JArray.Parse(json)
-					 .Select(t => {
-						 string? name = t["name"]?.ToString(Newtonsoft.Json.Formatting.None);
-						 string? effects = t["effects"]?.ToString(Newtonsoft.Json.Formatting.None);
-						 return name == null || effects == null
-							 ? throw new Exception("未找到 name 或 model 属性")
-							 : new ScaleModel {
-								 Name = name[1..^1],
-								 Effects = effects
-							 };
-					 })
-					 .ToArray();
+				scaleModels = JsonNode.Parse(
+					json,
+					new JsonNodeOptions { PropertyNameCaseInsensitive = false },
+					new JsonDocumentOptions {
+						CommentHandling = JsonCommentHandling.Skip,
+						AllowTrailingCommas = true
+					}
+				)?.AsArray().Select(model => {
+					if (model == null) {
+						throw new Exception("json 非法");
+					}
 
-				if (scaleModels.Length == 0) {
-					throw new Exception("数组为空");
+					JsonNode name = model["name"] ?? throw new Exception("未找到 name 字段");
+					JsonNode effects = model["effects"] ?? throw new Exception("未找到 effects 字段");
+
+					return new ScaleModel {
+						Name = name.GetValue<string>(),
+						Effects = effects.ToJsonString()
+					};
+				}).ToArray();
+
+				if (scaleModels == null || scaleModels.Length == 0) {
+					throw new Exception("解析 json 失败");
 				}
 			} catch (Exception e) {
 				Logger.Error(e, "解析缩放配置失败");
