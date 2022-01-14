@@ -116,8 +116,6 @@ namespace Magpie {
 		
 		void InitNotifyIcon() {
 			notifyIcon.Visible = false;
-
-			notifyIcon.Text = Title;
 			notifyIcon.MouseClick += NotifyIcon_MouseClick;
 
 			ContextMenuStrip menu = new();
@@ -391,6 +389,14 @@ namespace Magpie {
 		
 		private void Window_StateChanged(object sender, EventArgs e) {
 			if (WindowState == WindowState.Minimized) {
+				// 更新文字提示
+				notifyIcon.Text = string.Format(
+					Properties.Resources.UI_SysTray_Text,
+					Settings.Default.Hotkey,
+					cbbScaleMode.SelectedItem?.ToString(),
+					((ComboBoxItem)cbbCaptureMethod.SelectedItem)?.Content.ToString()
+				);
+
 				Hide();
 				notifyIcon.Visible = true;
 			} else {
