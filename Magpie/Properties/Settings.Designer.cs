@@ -358,5 +358,65 @@ namespace Magpie.Properties {
                 this["ShowDebuggingOptions"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint CropLeft {
+            get {
+                return ((uint)(this["CropLeft"]));
+            }
+            set {
+                this["CropLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint CropTop {
+            get {
+                return ((uint)(this["CropTop"]));
+            }
+            set {
+                this["CropTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint CropRight {
+            get {
+                return ((uint)(this["CropRight"]));
+            }
+            set {
+                this["CropRight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public uint CropBottom {
+            get {
+                return ((uint)(this["CropBottom"]));
+            }
+            set {
+                this["CropBottom"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool CustomCropping {
+            get {
+                return ((bool)(this["CustomCropping"]));
+            }
+            set {
+                this["CustomCropping"] = value;
+            }
+        }
     }
 }
