@@ -258,7 +258,7 @@
         "lum": 1,
         "CRTGamma": 2.4,
         "monitorGamma": 5.0,
-        "scanlineWeight": 0.25
+        // "scanlineWeight": 0.25
       }
     ]
   },
