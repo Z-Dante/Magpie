@@ -1,13 +1,8 @@
-//
-// StepTimer.h - A simple timer that provides elapsed time information
-//
-
 #pragma once
-
 #include "pch.h"
 
 
-// 帧率限制器
+// 用于记录帧率和 GPU 时间
 class GPUTimer {
 public:
 	GPUTimer();
@@ -30,7 +25,7 @@ public:
 
 	void ResetElapsedTime();
 
-	// Update timer state, calling the specified Update function the appropriate number of times.
+	// 在每帧开始时调用，用于记录帧率
 	void BeginFrame();
 
 private:
