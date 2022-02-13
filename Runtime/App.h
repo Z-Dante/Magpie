@@ -1,14 +1,15 @@
 #pragma once
 #include "pch.h"
-#include "Renderer.h"
-#include "FrameSourceBase.h"
 
+
+class Renderer;
+class FrameSourceBase;
 
 class App {
 public:
 	~App();
 
-	static App& GetInstance() {
+	static App& GetInstance() noexcept {
 		static App instance;
 		return instance;
 	}
@@ -19,133 +20,128 @@ public:
 		HWND hwndSrc,
 		const std::string& effectsJson,
 		UINT captureMode,
-		int frameRate,
 		float cursorZoomFactor,
 		UINT cursorInterpolationMode,
-		UINT adapterIdx,
+		int adapterIdx,
 		UINT multiMonitorMode,
 		const RECT& cropBorders,
 		UINT flags
 	);
 
-	void Close();
+	void Quit();
 
-	HINSTANCE GetHInstance() const {
+	HINSTANCE GetHInstance() const noexcept {
 		return _hInst;
 	}
 
-	HWND GetHwndSrc() const {
+	HWND GetHwndSrc() const noexcept {
 		return _hwndSrc;
 	}
 
-	const RECT& GetSrcFrameRect() const {
-		return _srcFrameRect;
-	}
-
-	bool UpdateSrcFrameRect();
-
-	HWND GetHwndHost() const {
+	HWND GetHwndHost() const noexcept {
 		return _hwndHost;
 	}
 
-	const RECT& GetHostWndRect() const {
+	const RECT& GetHostWndRect() const noexcept {
 		return _hostWndRect;
 	}
 
-	Renderer& GetRenderer() {
+	Renderer& GetRenderer() noexcept {
 		return *_renderer;
 	}
 
-	FrameSourceBase& GetFrameSource() {
+	FrameSourceBase& GetFrameSource() noexcept {
 		return *_frameSource;
 	}
 
-	UINT GetCaptureMode() const {
+	UINT GetCaptureMode() const noexcept {
 		return _captureMode;
 	}
 
-	int GetFrameRate() const {
-		return _frameRate;
-	}
-
-	float GetCursorZoomFactor() const {
+	float GetCursorZoomFactor() const noexcept {
 		return _cursorZoomFactor;
 	}
 
-	UINT GetCursorInterpolationMode() const {
+	UINT GetCursorInterpolationMode() const noexcept {
 		return _cursorInterpolationMode;
 	}
 
-	UINT GetAdapterIdx() const {
+	int GetAdapterIdx() const noexcept {
 		return _adapterIdx;
 	}
 
-	UINT GetMultiMonitorUsage() const {
+	UINT GetMultiMonitorUsage() const noexcept {
 		return _multiMonitorUsage;
 	}
 
-	bool IsMultiMonitorMode() const {
+	const RECT& GetCropBorders() const noexcept {
+		return _cropBorders;
+	}
+
+	bool IsMultiMonitorMode() const noexcept {
 		return _isMultiMonitorMode;
 	}
 
-	bool IsNoCursor() const {
+	bool IsNoCursor() const noexcept {
 		return _flags & (UINT)_FlagMasks::NoCursor;
 	}
 
-	bool IsAdjustCursorSpeed() const {
+	bool IsAdjustCursorSpeed() const noexcept {
 		return _flags & (UINT)_FlagMasks::AdjustCursorSpeed;
 	}
 
-	bool IsShowFPS() const {
+	bool IsShowFPS() const noexcept {
 		return _flags & (UINT)_FlagMasks::ShowFPS;
 	}
 
-	bool IsDisableLowLatency() const {
+	bool IsDisableLowLatency() const noexcept {
 		return _flags & (UINT)_FlagMasks::DisableLowLatency;
 	}
 
-	bool IsDisableWindowResizing() const {
+	bool IsDisableWindowResizing() const noexcept {
 		return _flags & (UINT)_FlagMasks::DisableWindowResizing;
 	}
 
-	bool IsBreakpointMode() const {
+	bool IsBreakpointMode() const noexcept {
 		return _flags & (UINT)_FlagMasks::BreakpointMode;
 	}
 
-	bool IsDisableDirectFlip() const {
+	bool IsDisableDirectFlip() const noexcept {
 		return _flags & (UINT)_FlagMasks::DisableDirectFlip;
 	}
 
-	bool IsConfineCursorIn3DGames() const {
+	bool IsConfineCursorIn3DGames() const noexcept {
 		return _flags & (UINT)_FlagMasks::ConfineCursorIn3DGames;
 	}
 
-	bool IsCropTitleBarOfUWP() const {
+	bool IsCropTitleBarOfUWP() const noexcept {
 		return _flags & (UINT)_FlagMasks::CropTitleBarOfUWP;
 	}
 
-	bool IsDisableEffectCache() const {
+	bool IsDisableEffectCache() const noexcept {
 		return _flags & (UINT)_FlagMasks::DisableEffectCache;
 	}
 
-	bool IsSimulateExclusiveFullscreen() const {
+	bool IsSimulateExclusiveFullscreen() const noexcept {
 		return _flags & (UINT)_FlagMasks::SimulateExclusiveFullscreen;
 	}
 
-	const char* GetErrorMsg() const {
+	bool IsDisableVSync() const noexcept {
+		return _flags & (UINT)_FlagMasks::DisableVSync;
+	}
+
+	const char* GetErrorMsg() const noexcept {
 		return _errorMsg;
 	}
 
-	void SetErrorMsg(const char* errorMsg) {
+	void SetErrorMsg(const char* errorMsg) noexcept {
 		_errorMsg = errorMsg;
 	}
 
-	ComPtr<IWICImagingFactory2> GetWICImageFactory();
-
-	bool RegisterTimer(UINT uElapse, std::function<void()> cb);
+	winrt::com_ptr<IWICImagingFactory2> GetWICImageFactory();
 
 private:
-	App() {}
+	App();
 
 	void _Run();
 
@@ -175,10 +171,9 @@ private:
 	RECT _srcFrameRect{};
 
 	UINT _captureMode = 0;
-	int _frameRate = 0;
 	float _cursorZoomFactor = 0;
 	UINT _cursorInterpolationMode = 0;
-	UINT _adapterIdx = 0;
+	int _adapterIdx = 0;
 	UINT _multiMonitorUsage = 0;
 	UINT _flags = 0;
 	RECT _cropBorders{};
@@ -194,7 +189,8 @@ private:
 		DisableDirectFlip = 0x80,
 		ConfineCursorIn3DGames = 0x100,
 		CropTitleBarOfUWP = 0x200,
-		DisableEffectCache = 0x400
+		DisableEffectCache = 0x400,
+		DisableVSync = 0x800
 	};
 
 	// 多屏幕模式下光标可以在屏幕间自由移动
@@ -205,9 +201,4 @@ private:
 
 	std::unique_ptr<Renderer> _renderer;
 	std::unique_ptr<FrameSourceBase> _frameSource;
-	ComPtr<IWICImagingFactory2> _wicImgFactory;
-
-	UINT _nextTimerId = 1;
-	// 存储所有计时器回调
-	std::vector<std::function<void()>> _timerCbs;
 };

@@ -6,6 +6,8 @@
 #include "DwmSharedSurfaceFrameSource.h"
 #include "DesktopDuplicationFrameSource.h"
 #include "ExclModeHack.h"
+#include "Renderer.h"
+#include "FrameSourceBase.h"
 
 
 extern std::shared_ptr<spdlog::logger> logger;
@@ -16,6 +18,8 @@ static constexpr const wchar_t* HOST_WINDOW_CLASS_NAME = L"Window_Magpie_967EB56
 static constexpr const wchar_t* DDF_WINDOW_CLASS_NAME = L"Window_Magpie_C322D752-C866-4630-91F5-32CB242A8930";
 static constexpr const wchar_t* HOST_WINDOW_TITLE = L"Magpie_Host";
 
+
+App::App() {}
 
 App::~App() {
 	MagUninitialize();
@@ -45,17 +49,15 @@ bool App::Run(
 	HWND hwndSrc,
 	const std::string& effectsJson,
 	UINT captureMode,
-	int frameRate,
 	float cursorZoomFactor,
 	UINT cursorInterpolationMode,
-	UINT adapterIdx,
+	int adapterIdx,
 	UINT multiMonitorUsage,
 	const RECT& cropBorders,
 	UINT flags
 ) {
 	_hwndSrc = hwndSrc;
 	_captureMode = captureMode;
-	_frameRate = frameRate;
 	_cursorZoomFactor = cursorZoomFactor;
 	_cursorInterpolationMode = cursorInterpolationMode;
 	_adapterIdx = adapterIdx;
@@ -63,7 +65,7 @@ bool App::Run(
 	_cropBorders = cropBorders;
 	_flags = flags;
 
-	SPDLOG_LOGGER_INFO(logger, fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tshowFPS：{}\n\tframeRate：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}\n\tdisableWindowResizing：{}\n\tdisableDirectFlip：{}\n\tconfineCursorIn3DGames：{}\n\tadapterIdx：{}\n\tcropTitleBarOfUWP：{}\n\tmultiMonitorUsage: {}\n\tnoCursor: {}\n\tdisableEffectCache: {}\n\tsimulateExclusiveFullscreen: {}\n\tcursorInterpolationMode: {}\n\tcropLeft: {}\n\tcropTop: {}\n\tcropRight: {}\n\tcropBottom: {}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsShowFPS(), frameRate, IsDisableLowLatency(), IsBreakpointMode(), IsDisableWindowResizing(), IsDisableDirectFlip(), IsConfineCursorIn3DGames(), adapterIdx, IsCropTitleBarOfUWP(), multiMonitorUsage, IsNoCursor(), IsDisableEffectCache(), IsSimulateExclusiveFullscreen(), cursorInterpolationMode, cropBorders.left, cropBorders.top, cropBorders.right, cropBorders.bottom));
+	SPDLOG_LOGGER_INFO(logger, fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tshowFPS：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}\n\tdisableWindowResizing：{}\n\tdisableDirectFlip：{}\n\tconfineCursorIn3DGames：{}\n\tadapterIdx：{}\n\tcropTitleBarOfUWP：{}\n\tmultiMonitorUsage: {}\n\tnoCursor: {}\n\tdisableEffectCache: {}\n\tsimulateExclusiveFullscreen: {}\n\tcursorInterpolationMode: {}\n\tcropLeft: {}\n\tcropTop: {}\n\tcropRight: {}\n\tcropBottom: {}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsShowFPS(), IsDisableLowLatency(), IsBreakpointMode(), IsDisableWindowResizing(), IsDisableDirectFlip(), IsConfineCursorIn3DGames(), adapterIdx, IsCropTitleBarOfUWP(), multiMonitorUsage, IsNoCursor(), IsDisableEffectCache(), IsSimulateExclusiveFullscreen(), cursorInterpolationMode, cropBorders.left, cropBorders.top, cropBorders.right, cropBorders.bottom));
 	
 	SetErrorMsg(ErrorMessages::GENERIC);
 
@@ -98,8 +100,8 @@ bool App::Run(
 
 	_renderer.reset(new Renderer());
 	if (!_renderer->Initialize()) {
-		SPDLOG_LOGGER_CRITICAL(logger, "初始化 Renderer 失败，正在清理");
-		Close();
+		SPDLOG_LOGGER_CRITICAL(logger, "初始化 Renderer 失败");
+		Quit();
 		_Run();
 		return false;
 	}
@@ -120,25 +122,17 @@ bool App::Run(
 		_frameSource.reset(new DwmSharedSurfaceFrameSource());
 		break;
 	default:
-		SPDLOG_LOGGER_CRITICAL(logger, "未知的捕获模式，即将退出");
-		Close();
+		SPDLOG_LOGGER_CRITICAL(logger, "未知的捕获模式");
+		Quit();
 		_Run();
 		return false;
 	}
 	
 	if (!_frameSource->Initialize()) {
-		SPDLOG_LOGGER_CRITICAL(logger, "初始化 FrameSource 失败，即将退出");
-		Close();
+		SPDLOG_LOGGER_CRITICAL(logger, "初始化 FrameSource 失败");
+		Quit();
 		_Run();
 		return false;
-	}
-
-	if (_srcFrameRect == RECT{}) {
-		// FrameSource 初始化完成后计算窗口边框，因为初始化过程中可能改变窗口位置
-		if (!UpdateSrcFrameRect()) {
-			SPDLOG_LOGGER_CRITICAL(logger, "UpdateSrcFrameRect 失败");
-			return false;
-		}
 	}
 
 	SPDLOG_LOGGER_INFO(logger, fmt::format("源窗口尺寸：{}x{}",
@@ -171,15 +165,13 @@ bool App::Run(
 	}
 
 	if (!_renderer->InitializeEffectsAndCursor(effectsJson)) {
-		SPDLOG_LOGGER_CRITICAL(logger, "初始化效果失败，即将退出");
-		Close();
+		SPDLOG_LOGGER_CRITICAL(logger, "初始化效果失败");
+		Quit();
 		_Run();
 		return false;
 	}
 
-	if (!ShowWindow(_hwndHost, SW_NORMAL)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("ShowWindow 失败"));
-	}
+	ShowWindow(_hwndHost, SW_NORMAL);
 
 	_Run();
 
@@ -207,9 +199,7 @@ void App::_Run() {
 		// 如果在 Run 中创建会有短暂的灰屏
 		// 选择第二帧的原因：当 GetFrameCount() 返回 1 时第一帧可能处于等待状态而没有渲染，见 Renderer::Render()
 		if (_renderer->GetTimer().GetFrameCount() == 2 && _hwndDDF) {
-			if (!ShowWindow(_hwndDDF, SW_NORMAL)) {
-				SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("ShowWindow 失败"));
-			}
+			ShowWindow(_hwndDDF, SW_NORMAL);
 
 			if (!SetWindowPos(_hwndDDF, _hwndHost, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOREDRAW)) {
 				SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetWindowPos 失败"));
@@ -218,13 +208,15 @@ void App::_Run() {
 	}
 }
 
-ComPtr<IWICImagingFactory2> App::GetWICImageFactory() {
-	if (_wicImgFactory == nullptr) {
+winrt::com_ptr<IWICImagingFactory2> App::GetWICImageFactory() {
+	static winrt::com_ptr<IWICImagingFactory2> wicImgFactory;
+
+	if (wicImgFactory == nullptr) {
 		HRESULT hr = CoCreateInstance(
 			CLSID_WICImagingFactory,
 			NULL,
 			CLSCTX_INPROC_SERVER,
-			IID_PPV_ARGS(&_wicImgFactory)
+			IID_PPV_ARGS(wicImgFactory.put())
 		);
 
 		if (FAILED(hr)) {
@@ -233,19 +225,7 @@ ComPtr<IWICImagingFactory2> App::GetWICImageFactory() {
 		}
 	}
 
-	return _wicImgFactory;
-}
-
-bool App::RegisterTimer(UINT uElapse, std::function<void()> cb) {
-	if (!SetTimer(_hwndHost, _nextTimerId, uElapse, nullptr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("SetTimer 失败"));
-		return false;
-	}
-
-	++_nextTimerId;
-	_timerCbs.emplace_back(std::move(cb));
-
-	return true;
+	return wicImgFactory;
 }
 
 
@@ -457,7 +437,7 @@ LRESULT App::_HostWndProcStatic(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	if (message == WM_DESTORYHOST) {
 		SPDLOG_LOGGER_INFO(logger, "收到 MAGPIE_WM_DESTORYHOST 消息，即将销毁主窗口");
-		Close();
+		Quit();
 		return 0;
 	}
 
@@ -468,15 +448,6 @@ LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// 1. 前台窗口发生改变
 		// 2. 收到_WM_DESTORYMAG 消息
 		PostQuitMessage(0);
-		return 0;
-	}
-	case WM_TIMER:
-	{
-		if (hWnd != _hwndHost || wParam <= 0 || wParam > _timerCbs.size()) {
-			break;
-		}
-
-		_timerCbs[wParam - 1]();
 		return 0;
 	}
 	default:
@@ -490,10 +461,6 @@ void App::_OnQuit() {
 	// 释放资源
 	_frameSource = nullptr;
 	_renderer = nullptr;
-
-	// 计时器资源在窗口销毁时自动释放
-	_nextTimerId = 1;
-	_timerCbs.clear();
 
 	// 还原窗口圆角
 	if (_roundCornerDisabled) {
@@ -530,118 +497,11 @@ void App::_OnQuit() {
 	SPDLOG_LOGGER_INFO(logger, "主窗口已销毁");
 }
 
-void App::Close() {
+void App::Quit() {
 	if (_hwndDDF) {
 		DestroyWindow(_hwndDDF);
 	}
 	if (_hwndHost) {
 		DestroyWindow(_hwndHost);
 	}
-}
-
-struct EnumChildWndParam {
-	const wchar_t* clientWndClassName = nullptr;
-	std::vector<HWND> childWindows;
-};
-
-static BOOL CALLBACK EnumChildProc(
-	_In_ HWND   hwnd,
-	_In_ LPARAM lParam
-) {
-	std::wstring className(256, 0);
-	int num = GetClassName(hwnd, &className[0], (int)className.size());
-	if (num == 0) {
-		SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetClassName 失败"));
-		return TRUE;
-	}
-	className.resize(num);
-
-	EnumChildWndParam* param = (EnumChildWndParam*)lParam;
-	if (className == param->clientWndClassName) {
-		param->childWindows.push_back(hwnd);
-	}
-
-	return TRUE;
-}
-
-static HWND FindClientWindow(HWND hwndSrc, const wchar_t* clientWndClassName) {
-	// 查找所有窗口类名为 ApplicationFrameInputSinkWindow 的子窗口
-	// 该子窗口一般为客户区
-	EnumChildWndParam param{};
-	param.clientWndClassName = clientWndClassName;
-	EnumChildWindows(hwndSrc, EnumChildProc, (LPARAM)&param);
-
-	if (param.childWindows.empty()) {
-		// 未找到符合条件的子窗口
-		return hwndSrc;
-	}
-
-	if (param.childWindows.size() == 1) {
-		return param.childWindows[0];
-	}
-
-	// 如果有多个匹配的子窗口，取最大的（一般不会出现）
-	int maxSize = 0, maxIdx = 0;
-	for (int i = 0; i < param.childWindows.size(); ++i) {
-		RECT rect;
-		if (!GetClientRect(param.childWindows[i], &rect)) {
-			continue;
-		}
-
-		int size = rect.right - rect.left + rect.bottom - rect.top;
-		if (size > maxSize) {
-			maxSize = size;
-			maxIdx = i;
-		}
-	}
-
-	return param.childWindows[maxIdx];
-}
-
-bool App::UpdateSrcFrameRect() {
-	_srcFrameRect = {};
-
-	if (IsCropTitleBarOfUWP()) {
-		std::wstring className(256, 0);
-		int num = GetClassName(_hwndSrc, &className[0], (int)className.size());
-		if (num > 0) {
-			className.resize(num);
-			if (App::GetInstance().IsCropTitleBarOfUWP() &&
-				(className == L"ApplicationFrameWindow" || className == L"Windows.UI.Core.CoreWindow")
-			) {
-				// "Modern App"
-				// 客户区窗口类名为 ApplicationFrameInputSinkWindow
-				HWND hwndClient = FindClientWindow(_hwndSrc, L"ApplicationFrameInputSinkWindow");
-				if (hwndClient) {
-					if (!Utils::GetClientScreenRect(hwndClient, _srcFrameRect)) {
-						SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetClientScreenRect 失败"));
-					}
-				}
-			}
-		} else {
-			SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetClassName 失败"));
-		}
-	}
-	
-	if (_srcFrameRect == RECT{}) {
-		if (!Utils::GetClientScreenRect(_hwndSrc, _srcFrameRect)) {
-			SPDLOG_LOGGER_ERROR(logger, MakeWin32ErrorMsg("GetClientScreenRect 失败"));
-			return false;
-		}
-	}
-
-	_srcFrameRect = {
-		_srcFrameRect.left + _cropBorders.left,
-		_srcFrameRect.top + _cropBorders.top,
-		_srcFrameRect.right - _cropBorders.right,
-		_srcFrameRect.bottom - _cropBorders.bottom
-	};
-
-	if (_srcFrameRect.right - _srcFrameRect.left <= 0 || _srcFrameRect.bottom - _srcFrameRect.top <= 0) {
-		SetErrorMsg(ErrorMessages::FAILED_TO_CROP);
-		SPDLOG_LOGGER_ERROR(logger, "裁剪窗口失败");
-		return false;
-	}
-
-	return true;
 }

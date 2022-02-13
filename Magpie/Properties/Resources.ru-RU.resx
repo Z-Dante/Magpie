@@ -340,6 +340,9 @@
   <data name="UI_Options_Scale_Cursor_Zoom_Factor" xml:space="preserve">
     <value>Множитель увеличения указателя</value>
   </data>
+  <data name="UI_Options_Scale_Adapter_Default" xml:space="preserve">
+    <value>По умолчанию</value>
+  </data>
   <data name="UI_Options_Scale_Disable_Low_Latency" xml:space="preserve">
     <value>Добавить задержку для повышения производительности</value>
   </data>
@@ -348,15 +351,6 @@
   </data>
   <data name="UI_Options_Scale_Disable_Window_Resizing" xml:space="preserve">
     <value>Не изменять размер окна при увеличении</value>
-  </data>
-  <data name="UI_Options_Scale_Frame_Rate" xml:space="preserve">
-    <value>Частота кадров</value>
-  </data>
-  <data name="UI_Options_Scale_Frame_Rate_Limiter" xml:space="preserve">
-    <value>Ограничитель</value>
-  </data>
-  <data name="UI_Options_Scale_Frame_Rate_Not_Limited" xml:space="preserve">
-    <value>Без ограничений</value>
   </data>
   <data name="UI_Options_Scale_Multiple_Monitors" xml:space="preserve">
     <value>Несколько мониторов</value>
@@ -384,9 +378,6 @@
   </data>
   <data name="UI_Options_Scale_Source_Window" xml:space="preserve">
     <value>Исходное окно</value>
-  </data>
-  <data name="UI_Options_Scale_VSync" xml:space="preserve">
-    <value>Верт. синхронизация</value>
   </data>
   <data name="UI_Options_Title" xml:space="preserve">
     <value>Настройки Magpie</value>

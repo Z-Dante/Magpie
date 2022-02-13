@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "DwmSharedSurfaceFrameSource.h"
 #include "App.h"
+#include "Renderer.h"
 
 
 extern std::shared_ptr<spdlog::logger> logger;
@@ -15,8 +16,8 @@ bool DwmSharedSurfaceFrameSource::Initialize() {
 		return false;
 	}
 
-	if (!App::GetInstance().UpdateSrcFrameRect()) {
-		SPDLOG_LOGGER_ERROR(logger, "UpdateSrcFrameRect 失败");
+	if (!_UpdateSrcFrameRect()) {
+		SPDLOG_LOGGER_ERROR(logger, "_UpdateSrcFrameRect 失败");
 		return false;
 	}
 	
@@ -31,12 +32,11 @@ bool DwmSharedSurfaceFrameSource::Initialize() {
 
 	SPDLOG_LOGGER_INFO(logger, fmt::format("源窗口 DPI 缩放为 {}", 1 / a));
 
-	RECT srcFrameRect = App::GetInstance().GetSrcFrameRect();
 	RECT frameRect = {
-		std::lround(srcFrameRect.left * a + bx),
-		std::lround(srcFrameRect.top * a + by),
-		std::lround(srcFrameRect.right * a + bx),
-		std::lround(srcFrameRect.bottom * a + by)
+		std::lround(_srcFrameRect.left * a + bx),
+		std::lround(_srcFrameRect.top * a + by),
+		std::lround(_srcFrameRect.right * a + bx),
+		std::lround(_srcFrameRect.bottom * a + by)
 	};
 	if (frameRect.left < 0 || frameRect.top < 0 || frameRect.right < 0 
 		|| frameRect.bottom < 0 || frameRect.right - frameRect.left <= 0
@@ -65,7 +65,7 @@ bool DwmSharedSurfaceFrameSource::Initialize() {
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_output);
+	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, _output.put());
 	if (FAILED(hr)) {
 		SPDLOG_LOGGER_CRITICAL(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
 		return false;
@@ -85,7 +85,7 @@ FrameSourceBase::UpdateState DwmSharedSurfaceFrameSource::Update() {
 		return UpdateState::Error;
 	}
 
-	ComPtr<ID3D11Texture2D> sharedTexture;
+	winrt::com_ptr<ID3D11Texture2D> sharedTexture;
 	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()
 		->OpenSharedResource(sharedTextureHandle, IID_PPV_ARGS(&sharedTexture));
 	if (FAILED(hr)) {
@@ -94,7 +94,7 @@ FrameSourceBase::UpdateState DwmSharedSurfaceFrameSource::Update() {
 	}
 	
 	App::GetInstance().GetRenderer().GetD3DDC()
-		->CopySubresourceRegion(_output.Get(), 0, 0, 0, 0, sharedTexture.Get(), 0, &_frameInWnd);
+		->CopySubresourceRegion(_output.get(), 0, 0, 0, 0, sharedTexture.get(), 0, &_frameInWnd);
 
 	return UpdateState::NewFrame;
 }

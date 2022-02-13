@@ -5,6 +5,7 @@
 #include <Windows.Graphics.DirectX.Direct3D11.interop.h>
 #include <winrt/Windows.Foundation.Metadata.h>
 #include "Utils.h"
+#include "Renderer.h"
 
 
 namespace winrt {
@@ -38,7 +39,7 @@ bool GraphicsCaptureFrameSource::Initialize() {
 		}
 
 		hr = CreateDirect3D11DeviceFromDXGIDevice(
-			App::GetInstance().GetRenderer().GetDXGIDevice().Get(),
+			App::GetInstance().GetRenderer().GetDXGIDevice().get(),
 			reinterpret_cast<::IInspectable**>(winrt::put_abi(_wrappedD3DDevice))
 		);
 		if (FAILED(hr)) {
@@ -137,7 +138,7 @@ bool GraphicsCaptureFrameSource::Initialize() {
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-	hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_output);
+	hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, _output.put());
 	if (FAILED(hr)) {
 		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
 		return false;
@@ -178,7 +179,7 @@ FrameSourceBase::UpdateState GraphicsCaptureFrameSource::Update() {
 			d3dSurface.as<::Windows::Graphics::DirectX::Direct3D11::IDirect3DDxgiInterfaceAccess>()
 		);
 
-		ComPtr<ID3D11Texture2D> withFrame;
+		winrt::com_ptr<ID3D11Texture2D> withFrame;
 		HRESULT hr = dxgiInterfaceAccess->GetInterface(IID_PPV_ARGS(&withFrame));
 		if (FAILED(hr)) {
 			SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("从获取 IDirect3DSurface 获取 ID3D11Texture2D 失败", hr));
@@ -186,7 +187,7 @@ FrameSourceBase::UpdateState GraphicsCaptureFrameSource::Update() {
 		}
 
 		App::GetInstance().GetRenderer().GetD3DDC()
-			->CopySubresourceRegion(_output.Get(), 0, 0, 0, 0, withFrame.Get(), 0, &_frameBox);
+			->CopySubresourceRegion(_output.get(), 0, 0, 0, 0, withFrame.get(), 0, &_frameBox);
 
 		return UpdateState::NewFrame;
 	} else {
@@ -205,20 +206,19 @@ bool GraphicsCaptureFrameSource::_CaptureFromWindow(winrt::impl::com_ref<IGraphi
 		return false;
 	}
 
-	if (!App::GetInstance().UpdateSrcFrameRect()) {
+	if (!_UpdateSrcFrameRect()) {
 		SPDLOG_LOGGER_ERROR(logger, "UpdateSrcFrameRect 失败");
 		return false;
 	}
-	RECT srcFrameRect = App::GetInstance().GetSrcFrameRect();
 
 	// 在源窗口存在 DPI 缩放时有时会有一像素的偏移（取决于窗口在屏幕上的位置）
 	// 可能是 DwmGetWindowAttribute 的 bug
 	_frameBox = {
-		UINT(srcFrameRect.left - srcRect.left),
-		UINT(srcFrameRect.top - srcRect.top),
+		UINT(_srcFrameRect.left - srcRect.left),
+		UINT(_srcFrameRect.top - srcRect.top),
 		0,
-		UINT(srcFrameRect.right - srcRect.left),
-		UINT(srcFrameRect.bottom - srcRect.top),
+		UINT(_srcFrameRect.right - srcRect.left),
+		UINT(_srcFrameRect.bottom - srcRect.top),
 		1
 	};
 
@@ -308,19 +308,17 @@ bool GraphicsCaptureFrameSource::_CaptureFromMonitor(winrt::impl::com_ref<IGraph
 		return false;
 	}
 
-	if (!App::GetInstance().UpdateSrcFrameRect()) {
+	if (!_UpdateSrcFrameRect()) {
 		SPDLOG_LOGGER_ERROR(logger, "UpdateSrcFrameRect 失败");
 		return false;
 	}
 
-	RECT srcFrameRect = App::GetInstance().GetSrcFrameRect();
-
 	_frameBox = {
-		UINT(srcFrameRect.left - mi.rcMonitor.left),
-		UINT(srcFrameRect.top - mi.rcMonitor.top),
+		UINT(_srcFrameRect.left - mi.rcMonitor.left),
+		UINT(_srcFrameRect.top - mi.rcMonitor.top),
 		0,
-		UINT(srcFrameRect.right - mi.rcMonitor.left),
-		UINT(srcFrameRect.bottom - mi.rcMonitor.top),
+		UINT(_srcFrameRect.right - mi.rcMonitor.left),
+		UINT(_srcFrameRect.bottom - mi.rcMonitor.top),
 		1
 	};
 

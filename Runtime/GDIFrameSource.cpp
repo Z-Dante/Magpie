@@ -1,29 +1,28 @@
 #include "pch.h"
 #include "GDIFrameSource.h"
 #include "App.h"
+#include "Renderer.h"
 
 
 extern std::shared_ptr<spdlog::logger> logger;
 
 bool GDIFrameSource::Initialize() {
-	if (!App::GetInstance().UpdateSrcFrameRect()) {
-		SPDLOG_LOGGER_ERROR(logger, "UpdateSrcFrameRect 失败");
+	if (!_UpdateSrcFrameRect()) {
+		SPDLOG_LOGGER_ERROR(logger, "_UpdateSrcFrameRect 失败");
 		return false;
 	}
 
 	HWND hwndSrc = App::GetInstance().GetHwndSrc();
-
-	RECT srcFrameRect = App::GetInstance().GetSrcFrameRect();
 
 	double a, bx, by;
 	if (_GetMapToOriginDPI(hwndSrc, a, bx, by)) {
 		SPDLOG_LOGGER_INFO(logger, fmt::format("源窗口 DPI 缩放为 {}", 1 / a));
 
 		_frameRect = {
-			std::lround(srcFrameRect.left * a + bx),
-			std::lround(srcFrameRect.top * a + by),
-			std::lround(srcFrameRect.right * a + bx),
-			std::lround(srcFrameRect.bottom * a + by)
+			std::lround(_srcFrameRect.left * a + bx),
+			std::lround(_srcFrameRect.top * a + by),
+			std::lround(_srcFrameRect.right * a + bx),
+			std::lround(_srcFrameRect.bottom * a + by)
 		};
 	} else {
 		SPDLOG_LOGGER_ERROR(logger, "_GetMapToOriginDPI 失败");
@@ -36,10 +35,10 @@ bool GDIFrameSource::Initialize() {
 		}
 
 		_frameRect = {
-			srcFrameRect.left - srcWindowRect.left,
-			srcFrameRect.top - srcWindowRect.top,
-			srcFrameRect.right - srcWindowRect.left,
-			srcFrameRect.bottom - srcWindowRect.top
+			_srcFrameRect.left - srcWindowRect.left,
+			_srcFrameRect.top - srcWindowRect.top,
+			_srcFrameRect.right - srcWindowRect.left,
+			_srcFrameRect.bottom - srcWindowRect.top
 		};
 	}
 	
@@ -63,15 +62,15 @@ bool GDIFrameSource::Initialize() {
 	desc.SampleDesc.Quality = 0;
 	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
-	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, &_output);
+	HRESULT hr = App::GetInstance().GetRenderer().GetD3DDevice()->CreateTexture2D(&desc, nullptr, _output.put());
 	if (FAILED(hr)) {
 		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("创建 Texture2D 失败", hr));
 		return false;
 	}
 
-	hr = _output.As<IDXGISurface1>(&_dxgiSurface);
-	if (FAILED(hr)) {
-		SPDLOG_LOGGER_ERROR(logger, MakeComErrorMsg("从 Texture2D 获取 IDXGISurface1 失败", hr));
+	_dxgiSurface = _output.try_as<IDXGISurface1>();
+	if (!_dxgiSurface) {
+		SPDLOG_LOGGER_ERROR(logger, "从 Texture2D 获取 IDXGISurface1 失败");
 		return false;
 	}
 
