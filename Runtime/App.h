@@ -59,10 +59,6 @@ public:
 		return *_frameSource;
 	}
 
-	UINT GetCaptureMode() const noexcept {
-		return _captureMode;
-	}
-
 	float GetCursorZoomFactor() const noexcept {
 		return _cursorZoomFactor;
 	}
@@ -148,12 +144,14 @@ public:
 private:
 	App();
 
-	void _Run();
+	void _RunMessageLoop();
 
 	void _RegisterWndClasses() const;
 
 	// 创建主窗口
 	bool _CreateHostWnd();
+
+	bool _InitFrameSource(int captureMode);
 
 	bool _DisableDirectFlip();
 
@@ -173,9 +171,7 @@ private:
 	HWND _hwndDDF = NULL;
 
 	RECT _hostWndRect{};
-	RECT _srcFrameRect{};
 
-	UINT _captureMode = 0;
 	float _cursorZoomFactor = 0;
 	UINT _cursorInterpolationMode = 0;
 	int _adapterIdx = 0;
