@@ -19,7 +19,9 @@ public:
 
 	bool GetShaderResourceView(ID3D11Texture2D* texture, ID3D11ShaderResourceView** result);
 
-	bool CompileShader(bool isVS, std::string_view hlsl, const char* entryPoint,
+	bool GetUnorderedAccessView(ID3D11Texture2D* texture, ID3D11UnorderedAccessView** result);
+
+	bool CompileShader(std::string_view hlsl, const char* entryPoint,
 		ID3DBlob** blob, const char* sourceName = nullptr, ID3DInclude* include = nullptr);
 
 	ID3D11Device3* GetD3DDevice() const noexcept { return _d3dDevice.get(); }
@@ -53,6 +55,7 @@ private:
 
 	std::unordered_map<ID3D11Texture2D*, winrt::com_ptr<ID3D11RenderTargetView>> _rtvMap;
 	std::unordered_map<ID3D11Texture2D*, winrt::com_ptr<ID3D11ShaderResourceView>> _srvMap;
+	std::unordered_map<ID3D11Texture2D*, winrt::com_ptr<ID3D11UnorderedAccessView>> _uavMap;
 
 	std::unordered_map<
 		std::pair<D3D11_FILTER, D3D11_TEXTURE_ADDRESS_MODE>,

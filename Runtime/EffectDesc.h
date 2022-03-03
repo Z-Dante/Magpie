@@ -28,7 +28,24 @@ struct EffectIntermediateTextureDesc {
 	std::string name;
 	std::string source;
 
-	static const DXGI_FORMAT DXGI_FORMAT_MAP[16];
+	inline static const DXGI_FORMAT DXGI_FORMAT_MAP[16]{
+		DXGI_FORMAT_R8_UNORM,
+		DXGI_FORMAT_R16_UNORM,
+		DXGI_FORMAT_R16_FLOAT,
+		DXGI_FORMAT_R8G8_UNORM,
+		DXGI_FORMAT_B5G6R5_UNORM,
+		DXGI_FORMAT_R16G16_UNORM,
+		DXGI_FORMAT_R16G16_FLOAT,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		DXGI_FORMAT_B8G8R8A8_UNORM,
+		DXGI_FORMAT_R10G10B10A2_UNORM,
+		DXGI_FORMAT_R32_FLOAT,
+		DXGI_FORMAT_R11G11B10_FLOAT,
+		DXGI_FORMAT_R32G32_FLOAT,
+		DXGI_FORMAT_R16G16B16A16_UNORM,
+		DXGI_FORMAT_R16G16B16A16_FLOAT,
+		DXGI_FORMAT_R32G32B32A32_FLOAT
+	};
 };
 
 enum class EffectSamplerFilterType {
@@ -52,13 +69,7 @@ enum class EffectConstantType {
 	Int
 };
 
-struct EffectValueConstantDesc {
-	std::string name;
-	EffectConstantType type = EffectConstantType::Float;
-	std::string valueExpr;
-};
-
-struct EffectConstantDesc {
+struct EffectParameterDesc {
 	std::string name;
 	std::string label;
 	EffectConstantType type = EffectConstantType::Float;
@@ -68,21 +79,40 @@ struct EffectConstantDesc {
 };
 
 struct EffectPassDesc {
+	winrt::com_ptr<ID3DBlob> cso;
 	std::vector<UINT> inputs;
 	std::vector<UINT> outputs;
-	winrt::com_ptr<ID3DBlob> cso;
+	std::array<UINT, 3> numThreads{};
+	std::pair<UINT, UINT> blockSize{};
+	bool isPSStyle = false;
+};
+
+enum EffectFlags {
+	EFFECT_FLAG_LAST_EFFECT = 0x1,
+	EFFECT_FLAG_INLINE_PARAMETERS = 0x2
 };
 
 struct EffectDesc {
 	// 用于计算效果的输出，空值表示支持任意大小的输出
 	std::pair<std::string, std::string> outSizeExpr;
 
-	std::vector<EffectConstantDesc> constants;
-	std::vector<EffectValueConstantDesc> valueConstants;
-	std::vector<EffectValueConstantDesc> dynamicValueConstants;
-
+	std::vector<EffectParameterDesc> params;
 	std::vector<EffectIntermediateTextureDesc> textures;
 	std::vector<EffectSamplerDesc> samplers;
 
 	std::vector<EffectPassDesc> passes;
+
+	UINT Flags = 0;
 };
+
+struct EffectParams {
+	std::optional<std::pair<float, float>> scale;
+	std::map<std::string, std::variant<float, int>> params;
+};
+
+union EffectConstant32 {
+	FLOAT floatVal;
+	UINT uintVal;
+	INT intVal;
+};
+

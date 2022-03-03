@@ -1,18 +1,13 @@
+// FidelityFX-FSR 中 RCAS 通道
+// 移植自 https://github.com/GPUOpen-Effects/FidelityFX-FSR/blob/master/ffx-fsr/ffx_fsr1.h
+
 //!MAGPIE EFFECT
-//!VERSION 1
+//!VERSION 2
 //!OUTPUT_WIDTH INPUT_WIDTH
 //!OUTPUT_HEIGHT INPUT_HEIGHT
 
 
-//!CONSTANT
-//!VALUE INPUT_WIDTH
-float inputWidth;
-
-//!CONSTANT
-//!VALUE INPUT_HEIGHT
-float inputHeight;
-
-//!CONSTANT
+//!PARAMETER
 //!DEFAULT 0.87
 //!MIN 1e-5
 float sharpness;
@@ -24,9 +19,10 @@ Texture2D INPUT;
 //!FILTER POINT
 SamplerState sam;
 
-
 //!PASS 1
-//!BIND INPUT
+//!IN INPUT
+//!BLOCK_SIZE 16, 16
+//!NUM_THREADS 64, 1, 1
 
 #define min3(a, b, c) min(a, min(b, c))
 #define max3(a, b, c) max(a, max(b, c))
@@ -35,18 +31,16 @@ SamplerState sam;
 #define FSR_RCAS_LIMIT (0.25-(1.0/16.0))
 
 
-float4 Pass1(float2 pos) {
-	int2 sp = floor(pos * float2(inputWidth, inputHeight));
-
+float3 FsrRcasF(uint2 pos) {
 	// Algorithm uses minimal 3x3 pixel neighborhood.
 	//    b 
 	//  d e f
 	//    h
-	float3 b = INPUT.Load(int3(sp.x, sp.y - 1, 0)).rgb;
-	float3 d = INPUT.Load(int3(sp.x - 1, sp.y, 0)).rgb;
-	float3 e = INPUT.Load(int3(sp, 0)).rgb;
-	float3 f = INPUT.Load(int3(sp.x + 1, sp.y, 0)).rgb;
-	float3 h = INPUT.Load(int3(sp.x, sp.y + 1, 0)).rgb;
+	float3 b = INPUT.Load(int3(pos.x, pos.y - 1, 0)).rgb;
+	float3 d = INPUT.Load(int3(pos.x - 1, pos.y, 0)).rgb;
+	float3 e = INPUT.Load(int3(pos, 0)).rgb;
+	float3 f = INPUT.Load(int3(pos.x + 1, pos.y, 0)).rgb;
+	float3 h = INPUT.Load(int3(pos.x, pos.y + 1, 0)).rgb;
 	// Rename (32-bit) or regroup (16-bit).
 	float bR = b.r;
 	float bG = b.g;
@@ -110,5 +104,29 @@ float4 Pass1(float2 pos) {
 		(lobe * bB + lobe * dB + lobe * hB + lobe * fB + eB) * rcpL
 	};
 
-	return float4(c, 1.0f);
+	return c;
+}
+
+void Main(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = blockStart + Rmp8x8(threadId.x);
+	if (!CheckViewport(gxy)) {
+		return;
+	}
+
+	WriteToOutput(gxy, FsrRcasF(gxy));
+
+	gxy.x += 8u;
+	if (CheckViewport(gxy)) {
+		WriteToOutput(gxy, FsrRcasF(gxy));
+	}
+
+	gxy.y += 8u;
+	if (CheckViewport(gxy)) {
+		WriteToOutput(gxy, FsrRcasF(gxy));
+	}
+
+	gxy.x -= 8u;
+	if (CheckViewport(gxy)) {
+		WriteToOutput(gxy, FsrRcasF(gxy));
+	}
 }

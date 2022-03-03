@@ -1,5 +1,7 @@
 #pragma once
 #include "pch.h"
+#include <unordered_map>
+#include "ErrorMessages.h"
 
 
 class DeviceResources;
@@ -10,7 +12,7 @@ class App {
 public:
 	~App();
 
-	static App& GetInstance() noexcept {
+	static App& Get() noexcept {
 		static App instance;
 		return instance;
 	}
@@ -91,10 +93,6 @@ public:
 		return _flags & (UINT)_FlagMasks::AdjustCursorSpeed;
 	}
 
-	bool IsShowFPS() const noexcept {
-		return _flags & (UINT)_FlagMasks::ShowFPS;
-	}
-
 	bool IsDisableLowLatency() const noexcept {
 		return _flags & (UINT)_FlagMasks::DisableLowLatency;
 	}
@@ -141,6 +139,9 @@ public:
 
 	winrt::com_ptr<IWICImagingFactory2> GetWICImageFactory();
 
+	UINT RegisterWndProcHandler(std::function<bool(HWND, UINT, WPARAM, LPARAM)> handler);
+	void UnregisterWndProcHandler(UINT id);
+
 private:
 	App();
 
@@ -182,7 +183,6 @@ private:
 	enum class _FlagMasks : UINT {
 		NoCursor = 0x1,
 		AdjustCursorSpeed = 0x2,
-		ShowFPS = 0x4,
 		SimulateExclusiveFullscreen = 0x8,
 		DisableLowLatency = 0x10,
 		BreakpointMode = 0x20,
@@ -203,4 +203,7 @@ private:
 	std::unique_ptr<DeviceResources> _deviceResources;
 	std::unique_ptr<Renderer> _renderer;
 	std::unique_ptr<FrameSourceBase> _frameSource;
+
+	std::map<UINT, std::function<bool(HWND, UINT, WPARAM, LPARAM)>> _wndProcHandlers;
+	UINT _nextWndProcHandlerID = 1;
 };
