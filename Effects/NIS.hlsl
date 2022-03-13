@@ -15,10 +15,12 @@ Texture2D INPUT;
 
 //!TEXTURE
 //!SOURCE NIS_Coef_Scale.dds
+//!FORMAT R16G16B16A16_FLOAT
 Texture2D coef_scaler;
 
 //!TEXTURE
 //!SOURCE NIS_Coef_USM.dds
+//!FORMAT R16G16B16A16_FLOAT
 Texture2D coef_usm;
 
 //!SAMPLER
@@ -28,11 +30,13 @@ SamplerState samplerLinearClamp;
 
 //!PASS 1
 //!IN INPUT, coef_scaler, coef_usm
-//!BLOCK_SIZE 32,24
-//!NUM_THREADS 256,1,1
+//!BLOCK_SIZE 32,32
+//!NUM_THREADS 256
 
 
-#define kDetectRatio (2 * 1127.f / 1024.f)
+#pragma warning(disable: 4714)	// X4714: sum of temp registers and indexable temp registers times 256 threads exceeds the recommended total 16384.  Performance may be reduced
+
+#define kDetectRatio (2.0f * 1127.f / 1024.f)
 #define kDetectThres (64.0f / 1024.0f)
 #define kEps (1.0f / 255.0f)
 #define kMinContrastRatio 2.0f
@@ -57,7 +61,7 @@ SamplerState samplerLinearClamp;
 #define NIS_SCALE_INT 1
 
 #define NIS_BLOCK_WIDTH 32
-#define NIS_BLOCK_HEIGHT 24
+#define NIS_BLOCK_HEIGHT 32
 #define NIS_THREAD_GROUP_SIZE 256
 #define kPhaseCount  64
 #define kFilterSize  6
@@ -94,30 +98,27 @@ float4 GetEdgeMap(float p[4][4], int i, int j) {
 	const float g_45_135_max = max(g_45, g_135);
 	const float g_45_135_min = min(g_45, g_135);
 
-	float e_0_90 = 0;
-	float e_45_135 = 0;
-
 	if (g_0_90_max + g_45_135_max == 0) {
 		return float4(0, 0, 0, 0);
+	} else {
+		float e_0_90 = min(g_0_90_max / (g_0_90_max + g_45_135_max), 1.0f);
+		float e_45_135 = 1.0f - e_0_90;
+
+		bool c_0_90 = (g_0_90_max > (g_0_90_min * kDetectRatio)) && (g_0_90_max > kDetectThres) && (g_0_90_max > g_45_135_min);
+		bool c_45_135 = (g_45_135_max > (g_45_135_min * kDetectRatio)) && (g_45_135_max > kDetectThres) && (g_45_135_max > g_0_90_min);
+		bool c_g_0_90 = g_0_90_max == g_0;
+		bool c_g_45_135 = g_45_135_max == g_45;
+
+		float f_e_0_90 = (c_0_90 && c_45_135) ? e_0_90 : 1.0f;
+		float f_e_45_135 = (c_0_90 && c_45_135) ? e_45_135 : 1.0f;
+
+		float weight_0 = (c_0_90 && c_g_0_90) ? f_e_0_90 : 0.0f;
+		float weight_90 = (c_0_90 && !c_g_0_90) ? f_e_0_90 : 0.0f;
+		float weight_45 = (c_45_135 && c_g_45_135) ? f_e_45_135 : 0.0f;
+		float weight_135 = (c_45_135 && !c_g_45_135) ? f_e_45_135 : 0.0f;
+
+		return float4(weight_0, weight_90, weight_45, weight_135);
 	}
-
-	e_0_90 = min(g_0_90_max / (g_0_90_max + g_45_135_max), 1.0f);
-	e_45_135 = 1.0f - e_0_90;
-
-	bool c_0_90 = (g_0_90_max > (g_0_90_min * kDetectRatio)) && (g_0_90_max > kDetectThres) && (g_0_90_max > g_45_135_min);
-	bool c_45_135 = (g_45_135_max > (g_45_135_min * kDetectRatio)) && (g_45_135_max > kDetectThres) && (g_45_135_max > g_0_90_min);
-	bool c_g_0_90 = g_0_90_max == g_0;
-	bool c_g_45_135 = g_45_135_max == g_45;
-
-	float f_e_0_90 = (c_0_90 && c_45_135) ? e_0_90 : 1.0f;
-	float f_e_45_135 = (c_0_90 && c_45_135) ? e_45_135 : 1.0f;
-
-	float weight_0 = (c_0_90 && c_g_0_90) ? f_e_0_90 : 0.0f;
-	float weight_90 = (c_0_90 && !c_g_0_90) ? f_e_0_90 : 0.0f;
-	float weight_45 = (c_45_135 && c_g_45_135) ? f_e_45_135 : 0.0f;
-	float weight_135 = (c_45_135 && !c_g_45_135) ? f_e_45_135 : 0.0f;
-
-	return float4(weight_0, weight_90, weight_45, weight_135);
 }
 
 void LoadFilterBanksSh(int i0, int di) {
@@ -321,7 +322,7 @@ float AddDirFilters(float p[6][6], float phase_x_frac, float phase_y_frac, int p
 	return f;
 }
 
-void Main(uint2 blockStart, uint3 threadId) {
+void Pass1(uint2 blockStart, uint3 threadId) {
 	float2 scale = GetScale();
 	float2 inputPt = GetInputPt();
 

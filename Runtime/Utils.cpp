@@ -4,6 +4,7 @@
 #include <winternl.h>
 #include "StrUtils.h"
 #include "Logger.h"
+#include <zstd.h>
 
 
 UINT Utils::GetWindowShowCmd(HWND hwnd) {
@@ -51,7 +52,7 @@ bool Utils::GetWindowFrameRect(HWND hWnd, RECT& result) {
 }
 
 bool Utils::ReadFile(const wchar_t* fileName, std::vector<BYTE>& result) {
-	Logger::Get().Info(fmt::format("读取文件：{}", StrUtils::UTF16ToUTF8(fileName)));
+	Logger::Get().Info(StrUtils::Concat("读取文件：", StrUtils::UTF16ToUTF8(fileName)));
 
 	CREATEFILE2_EXTENDED_PARAMETERS extendedParams = {};
 	extendedParams.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
@@ -83,7 +84,7 @@ bool Utils::ReadFile(const wchar_t* fileName, std::vector<BYTE>& result) {
 bool Utils::ReadTextFile(const wchar_t* fileName, std::string& result) {
 	FILE* hFile;
 	if (_wfopen_s(&hFile, fileName, L"rt") || !hFile) {
-		Logger::Get().Error(fmt::format("打开文件{}失败", StrUtils::UTF16ToUTF8(fileName)));
+		Logger::Get().Error(StrUtils::Concat("打开文件 ", StrUtils::UTF16ToUTF8(fileName), " 失败"));
 		return false;
 	}
 
@@ -104,7 +105,7 @@ bool Utils::ReadTextFile(const wchar_t* fileName, std::string& result) {
 bool Utils::WriteFile(const wchar_t* fileName, const void* buffer, size_t bufferSize) {
 	FILE* hFile;
 	if (_wfopen_s(&hFile, fileName, L"wb") || !hFile) {
-		Logger::Get().Error(fmt::format("打开文件{}失败", StrUtils::UTF16ToUTF8(fileName)));
+		Logger::Get().Error(StrUtils::Concat("打开文件 ", StrUtils::UTF16ToUTF8(fileName), " 失败"));
 		return false;
 	}
 
@@ -141,8 +142,8 @@ const RTL_OSVERSIONINFOW& Utils::GetOSVersion() {
 	return version;
 }
 
-std::string Utils::Bin2Hex(BYTE* data, size_t len) {
-	if (!data || len == 0) {
+std::string Utils::Bin2Hex(std::span<const BYTE> data) {
+	if (data.size() == 0) {
 		return {};
 	}
 
@@ -151,11 +152,10 @@ std::string Utils::Bin2Hex(BYTE* data, size_t len) {
 		'8','9','a','b','c','d','e','f'
 	};
 
-	std::string result(len * 2, 0);
+	std::string result(data.size() * 2, 0);
 	char* pResult = &result[0];
 
-	for (size_t i = 0; i < len; ++i) {
-		BYTE b = *data++;
+	for (BYTE b : data) {
 		*pResult++ = oct2Hex[(b >> 4) & 0xf];
 		*pResult++ = oct2Hex[b & 0xf];
 	}
@@ -213,6 +213,38 @@ void Utils::RunParallel(std::function<void(UINT)> func, UINT times) {
 #endif // _DEBUG
 }
 
+bool Utils::ZstdCompress(std::span<const BYTE> src, std::vector<BYTE>& dest, int compressionLevel) {
+	dest.resize(ZSTD_compressBound(src.size()));
+	size_t size = ZSTD_compress(dest.data(), dest.size(), src.data(), src.size(), compressionLevel);
+
+	if (ZSTD_isError(size)) {
+		Logger::Get().Error(StrUtils::Concat("压缩失败：", ZSTD_getErrorName(size)));
+		return false;
+	}
+
+	dest.resize(size);
+	return true;
+}
+
+bool Utils::ZstdDecompress(std::span<const BYTE> src, std::vector<BYTE>& dest) {
+	auto size = ZSTD_getFrameContentSize(src.data(), src.size());
+	if (size == ZSTD_CONTENTSIZE_UNKNOWN || size == ZSTD_CONTENTSIZE_ERROR) {
+		Logger::Get().Error("ZSTD_getFrameContentSize 失败");
+		return false;
+	}
+
+	dest.resize(size);
+	size = ZSTD_decompress(dest.data(), dest.size(), src.data(), src.size());
+	if (ZSTD_isError(size)) {
+		Logger::Get().Error(StrUtils::Concat("解压失败：", ZSTD_getErrorName(size)));
+		return false;
+	}
+
+	dest.resize(size);
+
+	return true;
+}
+
 
 Utils::Hasher::~Hasher() {
 	if (_hAlg) {
@@ -259,14 +291,17 @@ bool Utils::Hasher::Initialize() {
 		return false;
 	}
 
-	Logger::Get().Error("Utils::Hasher 初始化成功");
+	Logger::Get().Info("Utils::Hasher 初始化成功");
 	return true;
 }
 
-bool Utils::Hasher::Hash(void* data, size_t len, std::vector<BYTE>& result) {
+bool Utils::Hasher::Hash(std::span<const BYTE> data, std::vector<BYTE>& result) {
+	// BCrypt API 内部保存状态，因此需要同步对它们访问
+	std::scoped_lock lk(_cs);
+
 	result.resize(_hashLen);
 
-	NTSTATUS status = BCryptHashData(_hHash, (PUCHAR)data, (ULONG)len, 0);
+	NTSTATUS status = BCryptHashData(_hHash, (PUCHAR)data.data(), (ULONG)data.size(), 0);
 	if (!NT_SUCCESS(status)) {
 		Logger::Get().Error(fmt::format("BCryptCreateHash 失败\n\tNTSTATUS={}", status));
 		return false;
@@ -280,4 +315,3 @@ bool Utils::Hasher::Hash(void* data, size_t len, std::vector<BYTE>& result) {
 
 	return true;
 }
-

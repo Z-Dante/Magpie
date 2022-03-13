@@ -136,6 +136,8 @@ SamplerState sam;
 //!STYLE PS
 //!IN INPUT
 
+#pragma warning(disable: 3571) // X3571: pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them
+
 // Use the older, purely gaussian beam profile; uncomment for speed
 // #define USEGAUSSIAN
 
@@ -221,7 +223,7 @@ float4 scanlineWeights(float distance1, float4 color) {
 #endif
 }
 
-float4 Main(float2 pos) {
+float4 Pass1(float2 pos) {
 	const uint2 outputSize = GetOutputSize();
 	const uint2 inputSize = GetInputSize();
 

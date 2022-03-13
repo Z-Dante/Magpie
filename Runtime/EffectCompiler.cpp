@@ -12,7 +12,9 @@
 #include <bit>	// std::has_single_bit
 
 
-static constexpr const char* META_INDICATOR = "//!";
+static const char* META_INDICATOR = "//!";
+
+static const wchar_t* SAVE_SOURCE_DIR = L".\\sources";
 
 
 class PassInclude : public ID3DInclude {
@@ -24,7 +26,7 @@ public:
 		LPCVOID* ppData,
 		UINT* pBytes
 	) override {
-		std::wstring relativePath = L"effects\\" + StrUtils::UTF8ToUTF16(pFileName);
+		std::wstring relativePath = StrUtils::ConcatW(L"effects\\", StrUtils::UTF8ToUTF16(pFileName));
 
 		std::string file;
 		if (!Utils::ReadTextFile(relativePath.c_str(), file)) {
@@ -540,7 +542,7 @@ UINT ResolveTexture(std::string_view block, EffectDesc& desc) {
 		std::string t = StrUtils::ToUpperCase(token);
 
 		if (t == "SOURCE") {
-			if (processed.any()) {
+			if (processed[0] || processed[2] || processed[3]) {
 				return 1;
 			}
 			processed[0] = true;
@@ -551,7 +553,7 @@ UINT ResolveTexture(std::string_view block, EffectDesc& desc) {
 
 			texDesc.source = token;
 		} else if (t == "FORMAT") {
-			if (processed[0] || processed[1]) {
+			if (processed[1]) {
 				return 1;
 			}
 			processed[1] = true;
@@ -560,24 +562,16 @@ UINT ResolveTexture(std::string_view block, EffectDesc& desc) {
 				return 1;
 			}
 
-			static std::unordered_map<std::string, EffectIntermediateTextureFormat> formatMap = {
-				{"R8_UNORM", EffectIntermediateTextureFormat::R8_UNORM},
-				{"R16_UNORM", EffectIntermediateTextureFormat::R16_UNORM},
-				{"R16_FLOAT", EffectIntermediateTextureFormat::R16_FLOAT},
-				{"R8G8_UNORM", EffectIntermediateTextureFormat::R8G8_UNORM},
-				{"B5G6R5_UNORM", EffectIntermediateTextureFormat::B5G6R5_UNORM},
-				{"R16G16_UNORM", EffectIntermediateTextureFormat::R16G16_UNORM},
-				{"R16G16_FLOAT", EffectIntermediateTextureFormat::R16G16_FLOAT},
-				{"R8G8B8A8_UNORM", EffectIntermediateTextureFormat::R8G8B8A8_UNORM},
-				{"B8G8R8A8_UNORM", EffectIntermediateTextureFormat::B8G8R8A8_UNORM},
-				{"R10G10B10A2_UNORM", EffectIntermediateTextureFormat::R10G10B10A2_UNORM},
-				{"R32_FLOAT", EffectIntermediateTextureFormat::R32_FLOAT},
-				{"R11G11B10_FLOAT", EffectIntermediateTextureFormat::R11G11B10_FLOAT},
-				{"R32G32_FLOAT", EffectIntermediateTextureFormat::R32G32_FLOAT},
-				{"R16G16B16A16_UNORM", EffectIntermediateTextureFormat::R16G16B16A16_UNORM},
-				{"R16G16B16A16_FLOAT", EffectIntermediateTextureFormat::R16G16B16A16_FLOAT},
-				{"R32G32B32A32_FLOAT", EffectIntermediateTextureFormat::R32G32B32A32_FLOAT}
-			};
+			using enum EffectIntermediateTextureFormat;
+
+			static auto formatMap = []() {
+				std::unordered_map<std::string, EffectIntermediateTextureFormat> result;
+				// UNKNOWN 不可用
+				for (UINT i = 0, end = (UINT)std::size(EffectIntermediateTextureDesc::FORMAT_DESCS) - 1; i < end; ++i) {
+					result.emplace(EffectIntermediateTextureDesc::FORMAT_DESCS[i].name, (EffectIntermediateTextureFormat)i);
+				}
+				return result;
+			}();
 
 			auto it = formatMap.find(std::string(token));
 			if (it == formatMap.end()) {
@@ -630,11 +624,6 @@ UINT ResolveTexture(std::string_view block, EffectDesc& desc) {
 		// INPUT 已为第一个元素
 		desc.textures.pop_back();
 	} else {
-		// 否则 FORMAT 和 SOURCE 必须二选一
-		if (processed[0] == processed[1]) {
-			return 1;
-		}
-
 		texDesc.name = token;
 	}
 
@@ -897,6 +886,11 @@ UINT ResolvePasses(
 						return 1;
 					}
 
+					if (it->second == 0 || !desc.textures[it->second].source.empty()) {
+						// INPUT 和从文件读取的纹理不能作为输出
+						return 1;
+					}
+
 					passDesc.outputs.push_back(it->second);
 					texNames.erase(it);
 				}
@@ -911,28 +905,31 @@ UINT ResolvePasses(
 					return 1;
 				}
 
-				std::vector<std::string_view> blockSize = StrUtils::Split(val, ',');
-				if (blockSize.size() != 2) {
+				std::vector<std::string_view> split = StrUtils::Split(val, ',');
+				if (split.size() > 2) {
 					return 1;
 				}
 
 				UINT num;
-				if (GetNextNumber(blockSize[0], num) || num == 0) {
+				if (GetNextNumber(split[0], num) || num == 0) {
 					return 1;
 				}
 
-				if (GetNextToken<false>(blockSize[0], token) != 2) {
+				if (GetNextToken<false>(split[0], token) != 2) {
 					return false;
 				}
 
 				passDesc.blockSize.first = num;
 
-				if (GetNextNumber(blockSize[1], num) || num == 0) {
-					return 1;
-				}
+				// 如果只有一个数字，则它同时指定长和高
+				if (split.size() == 2) {
+					if (GetNextNumber(split[1], num) || num == 0) {
+						return 1;
+					}
 
-				if (GetNextToken<false>(blockSize[1], token) != 2) {
-					return false;
+					if (GetNextToken<false>(split[1], token) != 2) {
+						return false;
+					}
 				}
 
 				passDesc.blockSize.second = num;
@@ -948,18 +945,20 @@ UINT ResolvePasses(
 				}
 
 				std::vector<std::string_view> split = StrUtils::Split(val, ',');
-				if (split.size() != 3) {
+				if (split.size() > 3) {
 					return 1;
 				}
 
 				for (int i = 0; i < 3; ++i) {
-					UINT num;
-					if (GetNextNumber(split[i], num)) {
-						return 1;
-					}
+					UINT num = 1;
+					if (split.size() > i) {
+						if (GetNextNumber(split[i], num)) {
+							return 1;
+						}
 
-					if (GetNextToken<false>(split[i], token) != 2) {
-						return false;
+						if (GetNextToken<false>(split[i], token) != 2) {
+							return false;
+						}
 					}
 
 					passDesc.numThreads[i] = num;
@@ -988,13 +987,20 @@ UINT ResolvePasses(
 			}
 		}
 
-		if (passDesc.isPSStyle && (processed[2] || processed[3])) {
-			return 1;
+		if (passDesc.isPSStyle) {
+			if (processed[2] || processed[3]) {
+				return 1;
+			}
+		} else {
+			if (!processed[2] || !processed[3]) {
+				return 1;
+			}
 		}
 	}
 
 	return 0;
 }
+
 
 UINT GeneratePassSource(
 	const EffectDesc& desc,
@@ -1005,9 +1011,9 @@ UINT GeneratePassSource(
 	const std::map<std::string, std::variant<float, int>>& inlineParams,
 	std::string& result
 ) {
-	bool isLastEffect = desc.Flags & EFFECT_FLAG_LAST_EFFECT;
+	bool isLastEffect = desc.flags & EFFECT_FLAG_LAST_EFFECT;
 	bool isLastPass = passIdx == desc.passes.size();
-	bool isInlineParams = desc.Flags & EFFECT_FLAG_INLINE_PARAMETERS;
+	bool isInlineParams = desc.flags & EFFECT_FLAG_INLINE_PARAMETERS;
 
 	const EffectPassDesc& passDesc = desc.passes[(size_t)passIdx - 1];
 
@@ -1032,11 +1038,12 @@ UINT GeneratePassSource(
 	
 	// SRV
 	for (int i = 0; i < passDesc.inputs.size(); ++i) {
-		result.append(fmt::format("Texture2D {} : register(t{});\n", desc.textures[passDesc.inputs[i]].name, i));
+		auto& texDesc = desc.textures[passDesc.inputs[i]];
+		result.append(fmt::format("Texture2D<{}> {} : register(t{});\n", EffectIntermediateTextureDesc::FORMAT_DESCS[(UINT)texDesc.format].srvTexelType, texDesc.name, i));
 	}
 
 	if (isLastEffect && isLastPass) {
-		result.append(fmt::format("Texture2D __CURSOR : register(t{});\n", passDesc.inputs.size()));
+		result.append(fmt::format("Texture2D<float4> __CURSOR : register(t{});\n", passDesc.inputs.size()));
 	}
 
 	// UAV
@@ -1045,14 +1052,15 @@ UINT GeneratePassSource(
 			return 1;
 		}
 
-		result.append("RWTexture2D<float4> __OUTPUT : register(u0);\n");
+		result.append("RWTexture2D<unorm float4> __OUTPUT : register(u0);\n");
 	} else {
 		if (isLastPass) {
 			return 1;
 		}
 
 		for (int i = 0; i < passDesc.outputs.size(); ++i) {
-			result.append(fmt::format("RWTexture2D<float4> {} : register(u{});\n", desc.textures[passDesc.outputs[i]].name, i));
+			auto& texDesc = desc.textures[passDesc.outputs[i]];
+			result.append(fmt::format("RWTexture2D<{}> {} : register(u{});\n", EffectIntermediateTextureDesc::FORMAT_DESCS[(UINT)texDesc.format].uavTexelType, texDesc.name, i));
 		}
 	}
 
@@ -1118,6 +1126,7 @@ UINT GeneratePassSource(
 		result.append("bool CheckViewport(int2 pos) { return pos.x < __viewport.x && pos.y < __viewport.y; }\n");
 
 		if (isLastEffect) {
+			// 255.001953 的由来见 https://stackoverflow.com/questions/52103720/why-does-d3dcolortoubyte4-multiplies-components-by-255-001953f
 			result.append(R"(void WriteToOutput(uint2 pos, float3 color) {
 	pos += __offset.zw;
 	if ((int)pos.x >= __cursorRect.x && (int)pos.y >= __cursorRect.y && (int)pos.x < __cursorRect.z && (int)pos.y < __cursorRect.w) {
@@ -1128,7 +1137,7 @@ UINT GeneratePassSource(
 			if (mask.a < 0.5f){
 				color = mask.rgb;
 			} else {
-				color = (uint3(round(color * 255)) ^ uint3(mask.rgb * 255)) / 255.0f;
+				color = (uint3(round(color * 255.0f)) ^ uint3(mask.rgb * 255.001953f)) / 255.0f;
 			}
 		} else {
 			if( mask.x > 0.5f) {
@@ -1195,26 +1204,27 @@ void __M(uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID) {{
 		return;
 	}};
 
-	WriteToOutput(gxy, Main(pos).rgb);
+	WriteToOutput(gxy, Pass{1}(pos).rgb);
 
 	gxy.x += 8u;
 	pos.x += step.x;
 	if (CheckViewport(gxy)) {{
-		WriteToOutput(gxy, Main(pos).rgb);
+		WriteToOutput(gxy, Pass{1}(pos).rgb);
 	}};
 
 	gxy.y += 8u;
 	pos.y += step.y;
 	if (CheckViewport(gxy)) {{
-		WriteToOutput(gxy, Main(pos).rgb);
+		WriteToOutput(gxy, Pass{1}(pos).rgb);
 	}};
 
 	gxy.x -= 8u;
 	pos.x -= step.x;
 	if (CheckViewport(gxy)) {{
-		WriteToOutput(gxy, Main(pos).rgb);
+		WriteToOutput(gxy, Pass{1}(pos).rgb);
 	}};
-}})", isLastEffect ? " + __offset.xy" : ""));
+}}
+)", isLastEffect ? " + __offset.xy" : "", passIdx));
 			} else {
 				result.append(fmt::format(R"([numthreads(64, 1, 1)]
 void __M(uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID) {{
@@ -1225,26 +1235,27 @@ void __M(uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID) {{
 	float2 pos = (gxy + 0.5f) * __pass{0}OutputPt;
 	float2 step = 8 * __pass{0}OutputPt;
 
-	{1}[gxy] = Main(pos);
+	{1}[gxy] = Pass{0}(pos);
 
 	gxy.x += 8u;
 	pos.x += step.x;
 	if (gxy.x < __pass{0}OutputSize.x && gxy.y < __pass{0}OutputSize.y) {{
-		{1}[gxy] = Main(pos);
+		{1}[gxy] = Pass{0}(pos);
 	}}
 	
 	gxy.y += 8u;
 	pos.y += step.y;
 	if (gxy.x < __pass{0}OutputSize.x && gxy.y < __pass{0}OutputSize.y) {{
-		{1}[gxy] = Main(pos);
+		{1}[gxy] = Pass{0}(pos);
 	}}
 	
 	gxy.x -= 8u;
 	pos.x -= step.x;
 	if (gxy.x < __pass{0}OutputSize.x && gxy.y < __pass{0}OutputSize.y) {{
-		{1}[gxy] = Main(pos);
+		{1}[gxy] = Pass{0}(pos);
 	}}
-}})", passIdx, desc.textures[passDesc.outputs[0]].name));
+}}
+)", passIdx, desc.textures[passDesc.outputs[0]].name));
 			}
 		} else {
 			// 多渲染目标
@@ -1262,10 +1273,12 @@ void __M(uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID) {{
 	float2 step = 8 * __pass{0}OutputPt;
 )", passIdx));
 			for (int i = 0; i < passDesc.outputs.size(); ++i) {
-				result.append(fmt::format("\tfloat4 c{};\n", i));
+				auto& texDesc = desc.textures[passDesc.outputs[i]];
+				result.append(fmt::format("\t{} c{};\n",
+					EffectIntermediateTextureDesc::FORMAT_DESCS[(UINT)texDesc.format].srvTexelType, i));
 			}
 
-			std::string callPass = "\tMain(pos, ";
+			std::string callPass = fmt::format("\tPass{}(pos, ", passIdx);
 
 			for (int i = 0; i < passDesc.outputs.size() - 1; ++i) {
 				callPass.append(fmt::format("c{}, ", i));
@@ -1308,9 +1321,9 @@ void __M(uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID) {{
 
 		result.append(fmt::format(R"([numthreads({}, {}, {})]
 void __M(uint3 tid : SV_GroupThreadID, uint3 gid : SV_GroupID) {{
-	Main({}{}, tid);
+	Pass{}({}{}, tid);
 }}
-)", passDesc.numThreads[0], passDesc.numThreads[1], passDesc.numThreads[2], blockStartExpr, isLastEffect && isLastPass ? " + __offset.xy" : ""));
+)", passDesc.numThreads[0], passDesc.numThreads[1], passDesc.numThreads[2], passIdx, blockStartExpr, isLastEffect && isLastPass ? " + __offset.xy" : ""));
 	}
 
 	return 0;
@@ -1344,7 +1357,7 @@ cbuffer __CB2 : register(b1) {
 	int2 __viewport;
 )";
 
-	if (desc.Flags & EFFECT_FLAG_LAST_EFFECT) {
+	if (desc.flags & EFFECT_FLAG_LAST_EFFECT) {
 		// 指定输出到屏幕的位置
 		cbHlsl.append("\tint4 __offset;\n");
 	}
@@ -1357,7 +1370,7 @@ cbuffer __CB2 : register(b1) {
 		}
 	}
 
-	if (!(desc.Flags & EFFECT_FLAG_INLINE_PARAMETERS)) {
+	if (!(desc.flags & EFFECT_FLAG_INLINE_PARAMETERS)) {
 		for (const auto& d : desc.params) {
 			cbHlsl.append("\t")
 				.append(d.type == EffectConstantType::Int ? "int " : "float ")
@@ -1368,6 +1381,11 @@ cbuffer __CB2 : register(b1) {
 
 	cbHlsl.append("};\n\n");
 
+	if (App::Get().IsSaveEffectSources() && !Utils::DirExists(SAVE_SOURCE_DIR)) {
+		if (!CreateDirectory(SAVE_SOURCE_DIR, nullptr)) {
+			Logger::Get().Win32Error("创建 sources 文件夹失败");
+		}
+	}
 
 	// 并行生成代码和编译
 	Utils::RunParallel([&](UINT id) {
@@ -1377,8 +1395,18 @@ cbuffer __CB2 : register(b1) {
 			return;
 		}
 
+		if (App::Get().IsSaveEffectSources()) {
+			if (!Utils::WriteFile(
+				fmt::format(L"{}\\{}_Pass{}.hlsl", SAVE_SOURCE_DIR, StrUtils::UTF8ToUTF16(desc.name), id + 1).c_str(),
+				source.data(),
+				source.size()
+			)) {
+				Logger::Get().Error(fmt::format("保存 Pass{} 源码失败", id + 1));
+			}
+		}
+
 		if (!App::Get().GetDeviceResources().CompileShader(source, "__M", desc.passes[id].cso.put(),
-			fmt::format("Pass{}", id + 1).c_str(), &passInclude)
+			fmt::format("{}_Pass{}.hlsl", desc.name, id + 1).c_str(), &passInclude)
 		) {
 			Logger::Get().Error(fmt::format("编译 Pass{} 失败", id + 1));
 		}
@@ -1396,16 +1424,19 @@ cbuffer __CB2 : register(b1) {
 
 
 UINT EffectCompiler::Compile(
-	const wchar_t* fileName,
+	std::string_view effectName,
 	UINT flags,
 	const std::map<std::string, std::variant<float, int>>& inlineParams,
 	EffectDesc& desc
 ) {
 	desc = {};
-	desc.Flags = flags;
+	desc.name = effectName;
+	desc.flags = flags;
+
+	std::wstring fileName = (L"effects\\" + StrUtils::UTF8ToUTF16(effectName) + L".hlsl");
 
 	std::string source;
-	if (!Utils::ReadTextFile(fileName, source)) {
+	if (!Utils::ReadTextFile(fileName.c_str(), source)) {
 		Logger::Get().Error("读取源文件失败");
 		return 1;
 	}
@@ -1423,13 +1454,9 @@ UINT EffectCompiler::Compile(
 
 	std::string hash;
 	if (!App::Get().IsDisableEffectCache()) {
-		std::vector<BYTE> hashBytes;
-		if (!Utils::Hasher::Get().Hash(source.data(), source.size(), hashBytes)) {
-			Logger::Get().Error("计算 hash 失败");
-		} else {
-			hash = Utils::Bin2Hex(hashBytes.data(), hashBytes.size());
-
-			if (EffectCacheManager::Get().Load(fileName, hash, desc)) {
+		hash = EffectCacheManager::GetHash(source, flags & EFFECT_FLAG_INLINE_PARAMETERS ? &inlineParams : nullptr);
+		if (!hash.empty()) {
+			if (EffectCacheManager::Get().Load(effectName, hash, desc)) {
 				// 已从缓存中读取
 				return 0;
 			}
@@ -1550,8 +1577,14 @@ UINT EffectCompiler::Compile(
 	}
 
 	// 纹理第一个元素为 INPUT
-	EffectIntermediateTextureDesc& inputTex = desc.textures.emplace_back();
-	inputTex.name = "INPUT";
+	{
+		auto& texDesc = desc.textures.emplace_back();
+		texDesc.name = "INPUT";
+		texDesc.format = EffectIntermediateTextureFormat::R8G8B8A8_UNORM;
+		texDesc.sizeExpr.first = "INPUT_WIDTH";
+		texDesc.sizeExpr.second = "INPUT_HEIGHT";
+	}
+	
 	for (size_t i = 0; i < textureBlocks.size(); ++i) {
 		if (ResolveTexture(textureBlocks[i], desc)) {
 			Logger::Get().Error(fmt::format("解析 Texture#{} 块失败", i + 1));
@@ -1609,7 +1642,9 @@ UINT EffectCompiler::Compile(
 		return 1;
 	}
 
-	EffectCacheManager::Get().Save(fileName, hash, desc);
+	if (!App::Get().IsDisableEffectCache() && !hash.empty()) {
+		EffectCacheManager::Get().Save(effectName, hash, desc);
+	}
 
 	return 0;
 }

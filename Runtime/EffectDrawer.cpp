@@ -35,8 +35,8 @@ bool EffectDrawer::Initialize(
 	}
 
 	const SIZE hostSize = Utils::GetSizeOfRect(App::Get().GetHostWndRect());;
-	_isLastEffect = desc.Flags & EFFECT_FLAG_LAST_EFFECT;
-	bool isInlineParams = desc.Flags & EFFECT_FLAG_INLINE_PARAMETERS;
+	_isLastEffect = desc.flags & EFFECT_FLAG_LAST_EFFECT;
+	bool isInlineParams = desc.flags & EFFECT_FLAG_INLINE_PARAMETERS;
 
 	DeviceResources& dr = App::Get().GetDeviceResources();
 	auto d3dDevice = dr.GetD3DDevice();
@@ -132,6 +132,17 @@ bool EffectDrawer::Initialize(
 				Logger::Get().Error(fmt::format("加载纹理 {} 失败", texDesc.source));
 				return false;
 			}
+
+			if (texDesc.format != EffectIntermediateTextureFormat::UNKNOWN) {
+				// 检查纹理格式是否匹配
+				D3D11_TEXTURE2D_DESC desc{};
+				_textures[i]->GetDesc(&desc);
+				if (desc.Format != EffectIntermediateTextureDesc::FORMAT_DESCS[(UINT)texDesc.format].dxgiFormat) {
+					Logger::Get().Error("SOURCE 纹理格式不匹配");
+					return false;
+				}
+			}
+			
 		} else {
 			SIZE texSize{};
 			try {
@@ -149,19 +160,14 @@ bool EffectDrawer::Initialize(
 				return false;
 			}
 
-			D3D11_TEXTURE2D_DESC desc{};
-			desc.Format = EffectIntermediateTextureDesc::DXGI_FORMAT_MAP[(UINT)texDesc.format];
-			desc.Width = texSize.cx;
-			desc.Height = texSize.cy;
-			desc.Usage = D3D11_USAGE_DEFAULT;
-			desc.MipLevels = 1;
-			desc.ArraySize = 1;
-			desc.SampleDesc.Count = 1;
-			desc.SampleDesc.Quality = 0;
-			desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-			HRESULT hr = d3dDevice->CreateTexture2D(&desc, nullptr, _textures[i].put());
-			if (FAILED(hr)) {
-				Logger::Get().ComError("创建 Texture2D 失败", hr);
+			_textures[i] = dr.CreateTexture2D(
+				EffectIntermediateTextureDesc::FORMAT_DESCS[(UINT)texDesc.format].dxgiFormat,
+				texSize.cx,
+				texSize.cy,
+				D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS
+			);
+			if (!_textures[i]) {
+				Logger::Get().Error("创建纹理失败");
 				return false;
 			}
 		}
@@ -169,19 +175,15 @@ bool EffectDrawer::Initialize(
 
 	if (!_isLastEffect) {
 		// 创建输出纹理
-		D3D11_TEXTURE2D_DESC desc{};
-		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		desc.Width = outputSize.cx;
-		desc.Height = outputSize.cy;
-		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.MipLevels = 1;
-		desc.ArraySize = 1;
-		desc.SampleDesc.Count = 1;
-		desc.SampleDesc.Quality = 0;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
-		HRESULT hr = d3dDevice->CreateTexture2D(&desc, nullptr, _textures.back().put());
-		if (FAILED(hr)) {
-			Logger::Get().ComError("创建 Texture2D 失败", hr);
+		_textures.back() = dr.CreateTexture2D(
+			DXGI_FORMAT_R8G8B8A8_UNORM,
+			outputSize.cx,
+			outputSize.cy,
+			D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS
+		);
+		
+		if (!_textures.back()) {
+			Logger::Get().Error("创建纹理失败");
 			return false;
 		}
 	} else {
@@ -390,7 +392,7 @@ bool EffectDrawer::Initialize(
 					if ((paramDesc.minValue.index() == 2 && value < std::get<int>(paramDesc.minValue))
 						|| (paramDesc.maxValue.index() == 2 && value > std::get<int>(paramDesc.maxValue))
 					) {
-						Logger::Get().Error(fmt::format("参数 {} 的值非法", paramDesc.name));
+						Logger::Get().Error(StrUtils::Concat("参数 ", paramDesc.name," 的值非法"));
 						return false;
 					}
 				}
@@ -403,7 +405,7 @@ bool EffectDrawer::Initialize(
 
 		for (const auto& pair : params.params) {
 			if (!paramNames.contains(std::string_view(pair.first))) {
-				Logger::Get().Error(fmt::format("非法参数 {}", pair.first));
+				Logger::Get().Error(StrUtils::Concat("非法参数 ", pair.first));
 				return false;
 			}
 		}
@@ -417,7 +419,7 @@ bool EffectDrawer::Initialize(
 	D3D11_SUBRESOURCE_DATA initData{};
 	initData.pSysMem = _constants.data();
 
-	HRESULT hr = d3dDevice->CreateBuffer(&bd, &initData, _constantBuffer.put());
+	HRESULT hr = dr.GetD3DDevice()->CreateBuffer(&bd, &initData, _constantBuffer.put());
 	if (FAILED(hr)) {
 		Logger::Get().ComError("CreateBuffer 失败", hr);
 		return false;

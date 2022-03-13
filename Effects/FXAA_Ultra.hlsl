@@ -16,15 +16,15 @@ SamplerState sam;
 
 //!PASS 1
 //!IN INPUT
-//!BLOCK_SIZE 16, 16
-//!NUM_THREADS 64, 1, 1
+//!BLOCK_SIZE 16
+//!NUM_THREADS 64
 
 #define FXAA_PRESET 5
 #include "FXAA.hlsli"
 
 
-void Main(uint2 blockStart, uint3 threadId) {
-	uint2 gxy = Rmp8x8(threadId.x) * 2 + blockStart;
+void Pass1(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = (Rmp8x8(threadId.x) << 1) + blockStart;
 	if (!CheckViewport(gxy)) {
 		return;
 	}

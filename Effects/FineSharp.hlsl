@@ -64,15 +64,15 @@ SamplerState sam;
 //!PASS 1
 //!IN INPUT
 //!OUT tex1
-//!BLOCK_SIZE 16, 16
-//!NUM_THREADS 64, 1, 1
+//!BLOCK_SIZE 16
+//!NUM_THREADS 64
 
 
 #define RGBtoYUV(Kb,Kr) float3x3(float3(Kr, 1 - Kr - Kb, Kb), float3(-Kr, Kr + Kb - 1, 1 - Kb) / (2*(1 - Kb)), float3(1 - Kr, Kr + Kb - 1, -Kb) / (2*(1 - Kr)))
 static const float3x3 RGBtoYUV = GetInputSize().y <= 576 ? RGBtoYUV(0.114, 0.299) : RGBtoYUV(0.0722, 0.2126);
 
-void Main(uint2 blockStart, uint3 threadId) {
-	uint2 gxy = Rmp8x8(threadId.x) * 2 + blockStart;
+void Pass1(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = (Rmp8x8(threadId.x) << 1) + blockStart;
 	uint2 inputSize = GetInputSize();
 	if (gxy.x >= inputSize.x || gxy.y >= inputSize.y) {
 		return;
@@ -121,8 +121,8 @@ void Main(uint2 blockStart, uint3 threadId) {
 //!PASS 2
 //!IN tex1
 //!OUT tex2
-//!BLOCK_SIZE 16, 16
-//!NUM_THREADS 64, 1, 1
+//!BLOCK_SIZE 16
+//!NUM_THREADS 64
 
 // The variables passed to these median macros will be swapped around as part of the process. A temporary variable t of the same type is also required.
 #define sort(a1,a2)                         (t=min(a1,a2),a2=max(a1,a2),a1=t)
@@ -132,8 +132,8 @@ void Main(uint2 blockStart, uint3 threadId) {
 											 sort(a1,a3),sort(a5,a7),sort(a1,a5),sort(a3,a5),sort(a3,a7),\
 											 sort(a2,a4),sort(a6,a8),sort(a4,a8),sort(a4,a6),sort(a2,a6),median5(a2,a4,a5,a7,a9))
 
-void Main(uint2 blockStart, uint3 threadId) {
-	uint2 gxy = Rmp8x8(threadId.x) * 2 + blockStart;
+void Pass2(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = (Rmp8x8(threadId.x) << 1) + blockStart;
 	uint2 inputSize = GetInputSize();
 	if (gxy.x >= inputSize.x || gxy.y >= inputSize.y) {
 		return;
@@ -200,8 +200,8 @@ void Main(uint2 blockStart, uint3 threadId) {
 //!PASS 3
 //!IN tex2
 //!OUT tex1
-//!BLOCK_SIZE 16, 16
-//!NUM_THREADS 64, 1, 1
+//!BLOCK_SIZE 16
+//!NUM_THREADS 64
 
 #define lstr 1.49  // Modifier for non-linear sharpening
 #define pstr 1.272 // Exponent for non-linear sharpening
@@ -216,8 +216,8 @@ float SharpDiff(float4 c) {
 	return sign(t) * (sstr / 255.0f) * pow(abs(t) / (lstr / 255.0f), 1.0f / pstr) * ((t * t) / (t * t + ldmp / (255.0f * 255.0f)));
 }
 
-void Main(uint2 blockStart, uint3 threadId) {
-	uint2 gxy = Rmp8x8(threadId.x) * 2 + blockStart;
+void Pass3(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = (Rmp8x8(threadId.x) << 1) + blockStart;
 	uint2 inputSize = GetInputSize();
 	if (gxy.x >= inputSize.x || gxy.y >= inputSize.y) {
 		return;
@@ -284,8 +284,8 @@ void Main(uint2 blockStart, uint3 threadId) {
 //!PASS 4
 //!IN tex1
 //!OUT tex2
-//!BLOCK_SIZE 16, 16
-//!NUM_THREADS 64, 1, 1
+//!BLOCK_SIZE 16
+//!NUM_THREADS 64
 
 // The variables passed to these sorting macros will be swapped around as part of the process. A temporary variable t of the same type is also required.
 #define sort(a1,a2)                               (t=min(a1,a2),a2=max(a1,a2),a1=t)
@@ -300,8 +300,8 @@ void Main(uint2 blockStart, uint3 threadId) {
 #define sort9(a1,a2,a3,a4,a5,a6,a7,a8,a9)          (sort_min_max9(a1,a2,a3,a4,a5,a6,a7,a8,a9),sort_min_max7(a2,a3,a4,a5,a6,a7,a8),sort_min_max5(a3,a4,a5,a6,a7),sort_min_max3(a4,a5,a6))
 
 
-void Main(uint2 blockStart, uint3 threadId) {
-	uint2 gxy = Rmp8x8(threadId.x) * 2 + blockStart;
+void Pass4(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = (Rmp8x8(threadId.x) << 1) + blockStart;
 	uint2 inputSize = GetInputSize();
 	if (gxy.x >= inputSize.x || gxy.y >= inputSize.y) {
 		return;
@@ -369,16 +369,16 @@ void Main(uint2 blockStart, uint3 threadId) {
 
 //!PASS 5
 //!IN tex2
-//!BLOCK_SIZE 16, 16
-//!NUM_THREADS 64, 1, 1
+//!BLOCK_SIZE 16
+//!NUM_THREADS 64
 
 
 #define YUVtoRGB(Kb,Kr) float3x3(float3(1, 0, 2*(1 - Kr)), float3(Kb + Kr - 1, 2*(1 - Kb)*Kb, 2*Kr*(1 - Kr)) / (Kb + Kr - 1), float3(1, 2*(1 - Kb),0))
 static const float3x3 YUVtoRGB = GetInputSize().y <= 576 ? YUVtoRGB(0.114, 0.299) : YUVtoRGB(0.0722, 0.2126);
 
 
-void Main(uint2 blockStart, uint3 threadId) {
-	uint2 gxy = Rmp8x8(threadId.x) * 2 + blockStart;
+void Pass5(uint2 blockStart, uint3 threadId) {
+	uint2 gxy = (Rmp8x8(threadId.x) << 1) + blockStart;
 	if (!CheckViewport(gxy)) {
 		return;
 	}
@@ -419,8 +419,8 @@ void Main(uint2 blockStart, uint3 threadId) {
 			uint2 destPos = gxy + uint2(i - 1, j - 1);
 
 			if (i != 1 && j != 1) {
-				if (!CheckViewport(gxy)) {
-					return;
+				if (!CheckViewport(destPos)) {
+					continue;
 				}
 			}
 			

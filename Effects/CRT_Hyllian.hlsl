@@ -121,6 +121,8 @@ SamplerState sam;
 //!STYLE PS
 //!IN INPUT
 
+#pragma warning(disable: 3571) // X3571: pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them
+
 #define GAMMA_IN(color)     pow(color, float3(inputGamma, inputGamma, inputGamma))
 #define GAMMA_OUT(color)    pow(color, float3(1.0 / outputGamma, 1.0 / outputGamma, 1.0 / outputGamma))
 
@@ -148,7 +150,7 @@ const static float4x4 invX = float4x4((-B - 6.0 * C) / 6.0, (3.0 * B + 12.0 * C)
     -(12.0 - 9.0 * B - 6.0 * C) / 6.0, (18.0 - 15.0 * B - 12.0 * C) / 6.0, (3.0 * B + 6.0 * C) / 6.0, B / 6.0,
     (B + 6.0 * C) / 6.0, -C, 0.0, 0.0);
 
-float4 Main(float2 pos) {
+float4 Pass1(float2 pos) {
     uint2 inputSize = GetInputSize();
     uint2 outputSize = GetOutputSize();
     float3 color;

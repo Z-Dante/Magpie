@@ -148,6 +148,8 @@ SamplerState sam;
 //!STYLE PS
 //!IN INPUT
 
+#pragma warning(disable: 3571) // X3571: pow(f, e) will not work for negative f, use abs(f) or conditionally handle negative values if you expect them
+
 #define FIX(c) max(abs(c), 1e-5)
 #define PI 3.141592653589
 #define TEX2D(c) dilate(INPUT.SampleLevel(sam, c, 0))
@@ -190,7 +192,7 @@ float3 filter_lanczos(float4 coeffs, float4x4 color_matrix) {
 	return col.rgb;
 }
 
-float4 Main(float2 pos) {
+float4 Pass1(float2 pos) {
 	float2 inputPt = GetInputPt();
 	int2 inputSize = GetInputSize();
 	int2 outputSize = GetOutputSize();
