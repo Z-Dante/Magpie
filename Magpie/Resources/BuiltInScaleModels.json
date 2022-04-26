@@ -24,7 +24,6 @@
       {
         "effect": "SSimDownscaler",
         "scale": [ -1, -1 ],
-        "variant": 1
       }
     ]
   },
@@ -41,8 +40,7 @@
       },
       {
         "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -59,8 +57,7 @@
   //     },
   //     {
   //       "effect": "SSimDownscaler",
-  //       "scale": [ -1, -1 ],
-  //       "variant": 1
+  //       "scale": [ -1, -1 ]
   //     }
   //   ]
   // },
@@ -73,8 +70,7 @@
       },
       {
         "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -89,8 +85,7 @@
       },
       {
         "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -102,8 +97,7 @@
       },
       {
         "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -147,8 +141,7 @@
       },
       {
         "effect": "SSimDownscaler",
-        "scale": [ -1, -1 ],
-        "variant": 1
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -191,18 +184,18 @@
       }
     ]
   },
-  {
-    "name": "Anime4K (Very Light)",
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_S_Lite"
-      },
-      {
-        "effect": "CatmullRom",
-        "scale": [ -1, -1 ]
-      }
-    ]
-  },
+  // {
+  //   "name": "Anime4K (Very Light)",
+  //   "effects": [
+  //     {
+  //       "effect": "Anime4K_Upscale_S_Lite"
+  //     },
+  //     {
+  //       "effect": "CatmullRom",
+  //       "scale": [ -1, -1 ]
+  //     }
+  //   ]
+  // },
   {
     "name": "ANime4k Denoise + FSR",
     "effects": [
@@ -249,12 +242,12 @@
         "cornerSize": 0.005,
         "lum": 1,
         "CRTGamma": 2.4,
-        "monitorGamma": 2.2,
+        "monitorGamma": 5.0,
         // "scanlineWeight": 0.25
       }
     ]
   },
-  // Best CRT Simulation effect. Waiting for v2 update
+//  Best CRT Simulation effect. Waiting for v2 port
   // {
   //   "name": "CRT Cathode",
   //   "effects": [
@@ -310,6 +303,6 @@
   //       "effect": "CatmullRom",
   //       "scale": [ -1, -1 ]
   //     }
-    ]
-  }
+  //   ]
+  // }
 ]
