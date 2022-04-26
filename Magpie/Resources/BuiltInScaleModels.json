@@ -116,10 +116,8 @@
         "effect": "Anime4K_Upscale_GAN_x2_S"
       },
       {
-        "effect": "Bicubic",
-        "scale": [ -1, -1 ],
-        "paramB": 0.0,
-        "paramC": 0.5
+        "effect": "CatmullRom",
+        "scale": [ -1, -1 ]
       },
       {
         "effect": "Anime4K_Restore_Soft_M"
@@ -133,10 +131,8 @@
         "effect": "Anime4K_Upscale_GAN_x2_S"
       },
       {
-        "effect": "Bicubic",
-        "scale": [ -1, -1 ],
-        "paramB": 0.0,
-        "paramC": 0.5
+        "effect": "CatmullRom",
+        "scale": [ -1, -1 ]
       },
       {
         "effect": "Anime4K_Restore_VL"
@@ -190,10 +186,8 @@
         "effect": "Anime4K_Upscale_S"
       },
       {
-        "effect": "Bicubic",
-        "scale": [ -1, -1 ],
-        "paramB": 0.0,
-        "paramC": 0.5
+        "effect": "CatmullRom",
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -204,10 +198,8 @@
         "effect": "Anime4K_Upscale_S_Lite"
       },
       {
-        "effect": "Bicubic_Lite",
-        "scale": [ -1, -1 ],
-        "paramB": 0.0,
-        "paramC": 0.5
+        "effect": "CatmullRom",
+        "scale": [ -1, -1 ]
       }
     ]
   },
@@ -236,15 +228,15 @@
       }
     ]
   },
-  {
-    "name": "CRT Easymode",
-    "effects": [
-      {
-        "effect": "CRT_Easymode",
-        "scale": [ -1, -1 ]
-      }
-    ]
-  },
+  // {
+  //   "name": "CRT Easymode",
+  //   "effects": [
+  //     {
+  //       "effect": "CRT_Easymode",
+  //       "scale": [ -1, -1 ]
+  //     }
+  //   ]
+  // },
   {
     "name": "CRT Geom",
     "effects": [
@@ -257,70 +249,67 @@
         "cornerSize": 0.005,
         "lum": 1,
         "CRTGamma": 2.4,
-        "monitorGamma": 5.0,
+        "monitorGamma": 2.2,
         // "scanlineWeight": 0.25
       }
     ]
   },
-  {
-    "name": "CRT Cathode",
-    "effects": [
-      {
-        "effect": "CRT_Cathode",
-        "scale": [ -1, -1 ]
-      }
-    ]
-  },
-  {
-    "name": "ANime4k 3x !", // For large (1440p / 4k) displays only
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_GAN_x2_S"
-      },
-      {
-        "effect": "Bicubic",
-        "scale": [ 0.75, 0.75 ],
-        "paramB": 0.0,
-        "paramC": 0.5
-      },
-      {
-        "effect": "Anime4K_Restore_VL"
-      },
-      {
-        "effect": "Anime4K_Upscale_S"
-      },
-      {
-        "effect": "Bicubic",
-        "scale": [ -1, -1 ],
-        "paramB": 0.0,
-        "paramC": 0.5
-      }
-    ]
-  },
-  {
-    "name": "ANime4k 3x Light", // For large (1440p / 4k) displays only
-    "effects": [
-      {
-        "effect": "Anime4K_Upscale_GAN_x2_S"
-      },
-      {
-        "effect": "Bicubic",
-        "scale": [ 0.75, 0.75 ],
-        "paramB": 0.0,
-        "paramC": 0.5
-      },
-      {
-        "effect": "Anime4K_Restore_Soft_M"
-      },
-      {
-        "effect": "Anime4K_Upscale_S"
-      },
-      {
-        "effect": "Bicubic",
-        "scale": [ -1, -1 ],
-        "paramB": 0.0,
-        "paramC": 0.5
-      }
+  // Best CRT Simulation effect. Waiting for v2 update
+  // {
+  //   "name": "CRT Cathode",
+  //   "effects": [
+  //     {
+  //       "effect": "CRT_Cathode",
+  //       "scale": [ -1, -1 ]
+  //     }
+  //   ]
+  // },
+  // {
+  //   "name": "ANime4k 3x !", // For large (1440p / 4k) displays only
+  //   "effects": [
+  //     {
+  //       "effect": "Anime4K_Upscale_GAN_x2_S"
+  //     },
+  //     {
+  //       "effect": "Bicubic",
+  //       "scale": [ 0.75, 0.75 ],
+  //       "paramB": 0.0,
+  //       "paramC": 0.5
+  //     },
+  //     {
+  //       "effect": "Anime4K_Restore_VL"
+  //     },
+  //     {
+  //       "effect": "Anime4K_Upscale_S"
+  //     },
+  //     {
+  //       "effect": "CatmullRom",
+  //       "scale": [ -1, -1 ]
+  //     }
+  //   ]
+  // },
+  // {
+  //   "name": "ANime4k 3x Light", // For large (1440p / 4k) displays only
+  //   "effects": [
+  //     {
+  //       "effect": "Anime4K_Upscale_GAN_x2_S"
+  //     },
+  //     {
+  //       "effect": "Bicubic",
+  //       "scale": [ 0.75, 0.75 ],
+  //       "paramB": 0.0,
+  //       "paramC": 0.5
+  //     },
+  //     {
+  //       "effect": "Anime4K_Restore_Soft_M"
+  //     },
+  //     {
+  //       "effect": "Anime4K_Upscale_S"
+  //     },
+  //     {
+  //       "effect": "CatmullRom",
+  //       "scale": [ -1, -1 ]
+  //     }
     ]
   }
 ]
