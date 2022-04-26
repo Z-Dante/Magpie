@@ -10,9 +10,11 @@
 #include "DeviceResources.h"
 #include "GPUTimer.h"
 #include "Logger.h"
+#include "CursorManager.h"
+#include "Config.h"
+#include "StrUtils.h"
+#include "WindowsMessages.h"
 
-
-const UINT WM_DESTORYHOST = RegisterWindowMessage(L"MAGPIE_WM_DESTORYHOST");
 
 static constexpr const wchar_t* HOST_WINDOW_CLASS_NAME = L"Window_Magpie_967EB565-6F73-4E94-AE53-00CC42592A22";
 static constexpr const wchar_t* DDF_WINDOW_CLASS_NAME = L"Window_Magpie_C322D752-C866-4630-91F5-32CB242A8930";
@@ -57,14 +59,8 @@ bool App::Run(
 	UINT flags
 ) {
 	_hwndSrc = hwndSrc;
-	_cursorZoomFactor = cursorZoomFactor;
-	_cursorInterpolationMode = cursorInterpolationMode;
-	_adapterIdx = adapterIdx;
-	_multiMonitorUsage = multiMonitorUsage;
-	_cropBorders = cropBorders;
-	_flags = flags;
-
-	Logger::Get().Info(fmt::format("运行时参数：\n\thwndSrc：{}\n\tcaptureMode：{}\n\tadjustCursorSpeed：{}\n\tdisableLowLatency：{}\n\tbreakpointMode：{}\n\tdisableWindowResizing：{}\n\tdisableDirectFlip：{}\n\tconfineCursorIn3DGames：{}\n\tadapterIdx：{}\n\tcropTitleBarOfUWP：{}\n\tmultiMonitorUsage: {}\n\tnoCursor: {}\n\tdisableEffectCache: {}\n\tsimulateExclusiveFullscreen: {}\n\tcursorInterpolationMode: {}\n\tcropLeft: {}\n\tcropTop: {}\n\tcropRight: {}\n\tcropBottom: {}", (void*)hwndSrc, captureMode, IsAdjustCursorSpeed(), IsDisableLowLatency(), IsBreakpointMode(), IsDisableWindowResizing(), IsDisableDirectFlip(), IsConfineCursorIn3DGames(), adapterIdx, IsCropTitleBarOfUWP(), multiMonitorUsage, IsNoCursor(), IsDisableEffectCache(), IsSimulateExclusiveFullscreen(), cursorInterpolationMode, cropBorders.left, cropBorders.top, cropBorders.right, cropBorders.bottom));
+	_config.reset(new Config());
+	_config->Initialize(cursorZoomFactor, cursorInterpolationMode, adapterIdx, multiMonitorUsage, cropBorders, flags);
 	
 	SetErrorMsg(ErrorMessages::GENERIC);
 
@@ -101,7 +97,15 @@ bool App::Run(
 		return false;
 	}
 
-	if (IsDisableDirectFlip() && !IsBreakpointMode()) {
+	_cursorManager.reset(new CursorManager());
+	if (!_cursorManager->Initialize()) {
+		Logger::Get().Critical("初始化 CursorManager 失败");
+		Quit();
+		_RunMessageLoop();
+		return false;
+	}
+
+	if (_config->IsDisableDirectFlip() && !_config->IsBreakpointMode()) {
 		// 在此处创建的 DDF 窗口不会立刻显示
 		if (!_DisableDirectFlip()) {
 			Logger::Get().Error("_DisableDirectFlip 失败");
@@ -165,7 +169,7 @@ winrt::com_ptr<IWICImagingFactory2> App::GetWICImageFactory() {
 	return wicImgFactory;
 }
 
-UINT App::RegisterWndProcHandler(std::function<bool(HWND, UINT, WPARAM, LPARAM)> handler) {
+UINT App::RegisterWndProcHandler(std::function<std::optional<LRESULT>(HWND, UINT, WPARAM, LPARAM)> handler) {
 	UINT id = _nextWndProcHandlerID++;
 	return _wndProcHandlers.emplace(id, handler).second ? id : 0;
 }
@@ -291,19 +295,13 @@ bool App::_CreateHostWnd() {
 		return false;
 	}
 
-	if (!CalcHostWndRect(_hwndSrc, GetMultiMonitorUsage(), _hostWndRect)) {
+	if (!CalcHostWndRect(_hwndSrc, _config->GetMultiMonitorUsage(), _hostWndRect)) {
 		Logger::Get().Error("CalcHostWndRect 失败");
 		return false;
 	}
 
-	// 主窗口没有覆盖 Virtual Screen 则使用多屏幕模式
-	// 启用“在 3D 游戏中限制光标”或断点模式时不使用多屏幕模式
-	_isMultiMonitorMode = !IsConfineCursorIn3DGames() && !IsBreakpointMode() && GetMultiMonitorUsage() != 2 &&
-		((_hostWndRect.right - _hostWndRect.left) < GetSystemMetrics(SM_CXVIRTUALSCREEN) ||
-		(_hostWndRect.bottom - _hostWndRect.top) < GetSystemMetrics(SM_CYVIRTUALSCREEN));
-
 	_hwndHost = CreateWindowEx(
-		(IsBreakpointMode() ? 0 : WS_EX_TOPMOST) | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+		(_config->IsBreakpointMode() ? 0 : WS_EX_TOPMOST) | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
 		HOST_WINDOW_CLASS_NAME,
 		HOST_WINDOW_TITLE,
 		WS_POPUP,
@@ -326,7 +324,7 @@ bool App::_CreateHostWnd() {
 
 	// 设置窗口不透明
 	// 不完全透明时可关闭 DirectFlip
-	if (!SetLayeredWindowAttributes(_hwndHost, 0, IsDisableDirectFlip() ? 254 : 255, LWA_ALPHA)) {
+	if (!SetLayeredWindowAttributes(_hwndHost, 0, _config->IsDisableDirectFlip() ? 254 : 255, LWA_ALPHA)) {
 		Logger::Get().Win32Error("SetLayeredWindowAttributes 失败");
 	}
 
@@ -352,6 +350,8 @@ bool App::_InitFrameSource(int captureMode) {
 		Logger::Get().Critical("未知的捕获模式");
 		return false;
 	}
+
+	Logger::Get().Info(StrUtils::Concat("当前捕获模式：", _frameSource->GetName()));
 
 	if (!_frameSource->Initialize()) {
 		Logger::Get().Critical("初始化 FrameSource 失败");
@@ -414,12 +414,13 @@ LRESULT App::_HostWndProcStatic(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	for (auto& pair : _wndProcHandlers) {
-		if (pair.second(hWnd, message, wParam, lParam)) {
-			return TRUE;
+		const auto& result = pair.second(hWnd, message, wParam, lParam);
+		if (result.has_value()) {
+			return result.value();
 		}
 	}
 
-	if (message == WM_DESTORYHOST) {
+	if (message == WindowsMessages::WM_DESTORYHOST) {
 		Logger::Get().Info("收到 MAGPIE_WM_DESTORYHOST 消息，即将销毁主窗口");
 		Quit();
 		return 0;
@@ -427,15 +428,11 @@ LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message) {
 	case WM_DESTROY:
-	{
 		// 有两个退出路径：
 		// 1. 前台窗口发生改变
 		// 2. 收到_WM_DESTORYMAG 消息
 		PostQuitMessage(0);
 		return 0;
-	}
-	default:
-		break;
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
@@ -443,9 +440,11 @@ LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void App::_OnQuit() {
 	// 释放资源
+	_cursorManager = nullptr;
 	_renderer = nullptr;
 	_frameSource = nullptr;
 	_deviceResources = nullptr;
+	_config = nullptr;
 
 	_nextWndProcHandlerID = 1;
 	_wndProcHandlers.clear();

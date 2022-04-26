@@ -18,9 +18,19 @@ public:
 		RECT* virtualOutputRect = nullptr
 	);
 
-	void Draw();
+	void Draw(UINT& idx, bool noUpdate = false);
+
+	bool IsUseDynamic() const noexcept {
+		return _desc.isUseDynamic;
+	}
+
+	const EffectDesc& GetDesc() const noexcept {
+		return _desc;
+	}
 
 private:
+	void _DrawPass(UINT i);
+
 	EffectDesc _desc;
 
 	std::vector<ID3D11SamplerState*> _samplers;
@@ -35,6 +45,4 @@ private:
 	std::vector<winrt::com_ptr<ID3D11ComputeShader>> _shaders;
 
 	std::vector<std::pair<UINT, UINT>> _dispatches;
-
-	bool _isLastEffect = false;
 };

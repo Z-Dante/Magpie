@@ -12,7 +12,7 @@ public:
 
 	bool Initialize();
 
-	void BeginFrame();
+	void OnBeginFrame();
 
 	bool HasCursor() const {
 		return !!_curCursor;
@@ -44,17 +44,38 @@ public:
 	};
 	bool GetCursorTexture(ID3D11Texture2D** texture, CursorManager::CursorType& cursorType);
 
+	void OnCursorCapturedOnOverlay();
+
+	void OnCursorReleasedOnOverlay();
+
+	void OnCursorHoverOverlay();
+
+	void OnCursorLeaveOverlay();
+
+	bool IsCursorCapturedOnOverlay() const noexcept {
+		return _isCapturedOnOverlay;
+	}
+
+	bool IsCursorOnOverlay() const noexcept {
+		return _isOnOverlay;
+	}
+
 private:
-	void _StartCapture(POINT cursorPt);
+	void _StartCapture(POINT cursorPos);
 
-	void _StopCapture(POINT cursorPt);
-
-	void _DynamicClip(POINT cursorPt);
+	void _StopCapture(POINT cursorPos, bool onDestroy = false);
 
 	bool _ResolveCursor(HCURSOR hCursor, bool resolveTexture);
 
+	void _AdjustCursorSpeed();
+
+	void _UpdateCursorClip();
+
 	bool _isUnderCapture = false;
-	std::array<bool, 4> _curClips{};
+	RECT _curClips{};
+
+	bool _isCapturedOnOverlay = false;
+	bool _isOnOverlay = false;
 
 	INT _cursorSpeed = 0;
 

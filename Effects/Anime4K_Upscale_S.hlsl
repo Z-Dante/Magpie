@@ -32,6 +32,7 @@ SamplerState sam1;
 
 
 //!PASS 1
+//!DESC Conv-4x3x3x3
 //!IN INPUT
 //!OUT tex1
 //!BLOCK_SIZE 16
@@ -90,6 +91,7 @@ void Pass1(uint2 blockStart, uint3 threadId) {
 
 
 //!PASS 2
+//!DESC Conv-4x3x3x8
 //!IN tex1
 //!OUT tex2
 //!BLOCK_SIZE 16
@@ -161,6 +163,7 @@ void Pass2(uint2 blockStart, uint3 threadId) {
 }
 
 //!PASS 3
+//!DESC Conv-4x3x3x8
 //!IN tex2
 //!OUT tex1
 //!BLOCK_SIZE 16
@@ -232,6 +235,7 @@ void Pass3(uint2 blockStart, uint3 threadId) {
 
 
 //!PASS 4
+//!DESC Conv-4x3x3x8, Depth-to-Space
 //!IN INPUT, tex1
 //!BLOCK_SIZE 16
 //!NUM_THREADS 64
@@ -242,17 +246,11 @@ float4 A4KS4(float2 pos) {
 	// [ a, d, g ]
 	// [ b, e, h ]
 	// [ c, f, i ]
-	float2 tpos = pos - 0.5f * inputPt;
-	const float4 sr = tex1.GatherRed(sam, tpos);
-	const float4 sg = tex1.GatherGreen(sam, tpos);
-	const float4 sb = tex1.GatherBlue(sam, tpos);
-	const float4 sa = tex1.GatherAlpha(sam, tpos);
-
-	float4 a = float4(sr.w, sg.w, sb.w, sa.w);
-	float4 b = float4(sr.x, sg.x, sb.x, sa.x);
+	float4 a = tex1.SampleLevel(sam, pos - inputPt, 0);
+	float4 b = tex1.SampleLevel(sam, pos + float2(-inputPt.x, 0), 0);
 	float4 c = tex1.SampleLevel(sam, pos + float2(-inputPt.x, inputPt.y), 0);
-	float4 d = float4(sr.z, sg.z, sb.z, sa.z);
-	float4 e = float4(sr.y, sg.y, sb.y, sa.y);
+	float4 d = tex1.SampleLevel(sam, pos + float2(0, -inputPt.y), 0);
+	float4 e = tex1.SampleLevel(sam, pos, 0);
 	float4 f = tex1.SampleLevel(sam, pos + float2(0, inputPt.y), 0);
 	float4 g = tex1.SampleLevel(sam, pos + float2(inputPt.x, -inputPt.y), 0);
 	float4 h = tex1.SampleLevel(sam, pos + float2(inputPt.x, 0), 0);

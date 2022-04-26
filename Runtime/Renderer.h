@@ -2,10 +2,9 @@
 #include "pch.h"
 #include "EffectDesc.h"
 
-
 class EffectDrawer;
 class GPUTimer;
-class UIDrawer;
+class OverlayDrawer;
 class CursorManager;
 
 
@@ -25,9 +24,14 @@ public:
 		return *_gpuTimer;
 	}
 
-	CursorManager& GetCursorManager() noexcept {
-		return *_cursorManager;
+	// 可能为空
+	OverlayDrawer* GetOverlayDrawer() {
+		return _overlayDrawer.get();
 	}
+
+	bool IsUIVisiable() const noexcept;
+
+	void SetUIVisibility(bool value);
 
 	const RECT& GetOutputRect() const noexcept {
 		return _outputRect;
@@ -37,7 +41,15 @@ public:
 		return _virtualOutputRect;
 	}
 
+	UINT GetEffectCount() const noexcept {
+		return (UINT)_effects.size();
+	}
+
+	const EffectDesc& GetEffectDesc(size_t idx) const noexcept;
+
 private:
+	bool _InitializeOverlayDrawer();
+
 	bool _CheckSrcState();
 
 	bool _ResolveEffectsJson(const std::string& effectsJson);
@@ -55,8 +67,8 @@ private:
 	std::array<EffectConstant32, 12> _dynamicConstants;
 	winrt::com_ptr<ID3D11Buffer> _dynamicCB;
 
-	std::unique_ptr<UIDrawer> _UIDrawer;
+	std::unique_ptr<OverlayDrawer> _overlayDrawer;
+	UINT _handlerID = 0;
 
 	std::unique_ptr<GPUTimer> _gpuTimer;
-	std::unique_ptr<CursorManager> _cursorManager;
 };

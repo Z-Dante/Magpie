@@ -8,20 +8,34 @@
 #include "DeviceResources.h"
 #include "GPUTimer.h"
 #include "EffectDrawer.h"
-#include "UIDrawer.h"
+#include "OverlayDrawer.h"
 #include "Logger.h"
 #include "CursorManager.h"
+#include "Config.h"
+#include "WindowsMessages.h"
 
 #pragma push_macro("GetObject")
 #undef GetObject
 #include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 
+
+static std::optional<LRESULT> WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	if (msg == WindowsMessages::WM_TOGGLE_OVERLAY && !App::Get().GetConfig().IsConfineCursorIn3DGames()) {
+		Renderer& renderer = App::Get().GetRenderer();
+		renderer.SetUIVisibility(!renderer.IsUIVisiable());
+		return 0;
+	}
+
+	return std::nullopt;
+}
 
 Renderer::Renderer() {}
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() {
+	if (_handlerID != 0) {
+		App::Get().UnregisterWndProcHandler(_handlerID);
+	}
+}
 
 bool Renderer::Initialize(const std::string& effectsJson) {
 	_gpuTimer.reset(new GPUTimer());
@@ -35,18 +49,12 @@ bool Renderer::Initialize(const std::string& effectsJson) {
 		Logger::Get().Error("_ResolveEffectsJson 失败");
 		return false;
 	}
-	/*
-	ID3D11Texture2D* backBuffer = App::Get().GetDeviceResources().GetBackBuffer();
-
-	_UIDrawer.reset(new UIDrawer());
-	if (!_UIDrawer->Initialize(backBuffer)) {
-		return false;
-	}*/
-
-	_cursorManager.reset(new CursorManager());
-	if (!_cursorManager->Initialize()) {
-		Logger::Get().Error("初始化 CursorManager 失败");
-		return false;
+	
+	if (App::Get().GetConfig().IsShowFPS()) {
+		if (!_InitializeOverlayDrawer()) {
+			Logger::Get().Error("初始化 OverlayDrawer 失败");
+			return false;
+		}
 	}
 
 	// 初始化所有效果共用的动态常量缓冲区
@@ -63,6 +71,8 @@ bool Renderer::Initialize(const std::string& effectsJson) {
 		return false;
 	}
 
+	_handlerID = App::Get().RegisterWndProcHandler(WndProcHandler);
+
 	return true;
 }
 
@@ -75,11 +85,14 @@ void Renderer::Render() {
 	}
 
 	DeviceResources& dr = App::Get().GetDeviceResources();
-	ID3D11DeviceContext3* d3dDC = dr.GetD3DDC();
 
 	if (!_waitingForNextFrame) {
 		dr.BeginFrame();
+		_gpuTimer->OnBeginFrame();
 	}
+
+	// 首先处理配置改变产生的回调
+	App::Get().GetConfig().OnBeginFrame();
 
 	auto state = App::Get().GetFrameSource().Update();
 	_waitingForNextFrame = state == FrameSourceBase::UpdateState::Waiting
@@ -87,58 +100,93 @@ void Renderer::Render() {
 	if (_waitingForNextFrame) {
 		return;
 	}
-
-	_gpuTimer->BeginFrame();
-	_cursorManager->BeginFrame();
+	
+	App::Get().GetCursorManager().OnBeginFrame();
 
 	if (!_UpdateDynamicConstants()) {
 		Logger::Get().Error("_UpdateDynamicConstants 失败");
 	}
+
+	auto d3dDC = dr.GetD3DDC();
 
 	{
 		ID3D11Buffer* t = _dynamicCB.get();
 		d3dDC->CSSetConstantBuffers(0, 1, &t);
 	}
 
-	for (auto& effect : _effects) {
-		effect->Draw();
-	}
+	_gpuTimer->OnBeginEffects();
 
-	
-	/*
-	// 更新常量
-	if (!EffectDrawer::UpdateExprDynamicVars()) {
-		SPDLOG_LOGGER_ERROR(logger, "UpdateExprDynamicVars 失败");
-	}
-
-	if (state == FrameSourceBase::UpdateState::NewFrame) {
-		
-	} else {
+	UINT idx = 0;
+	if (state == FrameSourceBase::UpdateState::NoUpdate) {
 		// 此帧内容无变化
-		// 从第一个有动态常量的 Effect 开始渲染
-		// 如果没有则只渲染最后一个 Effect 的最后一个 pass
+		// 从第一个使用动态常量的效果开始渲染
+		// 如果没有则只渲染最后一个效果的最后一个通道
 
 		size_t i = 0;
-		for (; i < _effects.size(); ++i) {
-			if (_effects[i]->HasDynamicConstants()) {
+		for (size_t end = _effects.size() - 1; i < end; ++i) {
+			if (_effects[i]->IsUseDynamic()) {
 				break;
+			} else {
+				for (UINT j = (UINT)_effects[i]->GetDesc().passes.size(); j > 0; --j) {
+					_gpuTimer->OnEndPass(idx++);
+				}
 			}
 		}
 
 		if (i == _effects.size()) {
 			// 只渲染最后一个 Effect 的最后一个 pass
-			_effects.back()->Draw(true);
+			_effects.back()->Draw(idx, true);
 		} else {
 			for (; i < _effects.size(); ++i) {
-				_effects[i]->Draw();
+				_effects[i]->Draw(idx);
 			}
+		}
+	} else {
+		for (auto& effect : _effects) {
+			effect->Draw(idx);
 		}
 	}
 
-	_UIDrawer->Draw();*/
+	_gpuTimer->OnEndEffects();
 
+	if (_overlayDrawer) {
+		_overlayDrawer->Draw();
+	}
 
 	dr.EndFrame();
+}
+
+bool Renderer::IsUIVisiable() const noexcept {
+	return _overlayDrawer ? _overlayDrawer->IsUIVisiable() : false;
+}
+
+void Renderer::SetUIVisibility(bool value) {
+	if (!value) {
+		if (_overlayDrawer && _overlayDrawer->IsUIVisiable()) {
+			_overlayDrawer->SetUIVisibility(false);
+			_gpuTimer->StopProfiling();
+		}
+		return;
+	}
+
+	if (!_overlayDrawer) {
+		if (!_InitializeOverlayDrawer()) {
+			Logger::Get().Error("初始化 OverlayDrawer 失败");
+			return;
+		}
+	}
+
+	if (!_overlayDrawer->IsUIVisiable()) {
+		_overlayDrawer->SetUIVisibility(true);
+
+		UINT passCount = 0;
+		for (const auto& effect : _effects) {
+			passCount += (UINT)effect->GetDesc().passes.size();
+		}
+
+		// StartProfiling 必须在 OnBeginFrame 之前调用
+		_gpuTimer->StartProfiling(std::chrono::milliseconds(500), passCount);
+	}
 }
 
 bool CheckForeground(HWND hwndForeground) {
@@ -175,11 +223,6 @@ bool CheckForeground(HWND hwndForeground) {
 		) {
 			return true;
 		}
-	}
-
-	// 非多屏幕模式下退出全屏
-	if (!App::Get().IsMultiMonitorMode()) {
-		return false;
 	}
 
 	if (rectForground == RECT{}) {
@@ -234,10 +277,20 @@ bool CheckForeground(HWND hwndForeground) {
 	return false;
 }
 
+const EffectDesc& Renderer::GetEffectDesc(size_t idx) const noexcept {
+	assert(idx < _effects.size());
+	return _effects[idx]->GetDesc();
+}
+
+bool Renderer::_InitializeOverlayDrawer() {
+	_overlayDrawer.reset(new OverlayDrawer());
+	return _overlayDrawer->Initialize();
+}
+
 bool Renderer::_CheckSrcState() {
 	HWND hwndSrc = App::Get().GetHwndSrc();
 
-	if (!App::Get().IsBreakpointMode()) {
+	if (!App::Get().GetConfig().IsBreakpointMode()) {
 		HWND hwndForeground = GetForegroundWindow();
 		if (hwndForeground && hwndForeground != hwndSrc && !CheckForeground(hwndForeground)) {
 			Logger::Get().Info("前台窗口已改变");
@@ -337,6 +390,17 @@ bool Renderer::_ResolveEffectsJson(const std::string& effectsJson) {
 						effectFlag |= EFFECT_FLAG_INLINE_PARAMETERS;
 					}
 					continue;
+				} else if (name == "fp16") {
+					if (!prop.value.IsBool()) {
+						Logger::Get().Error(fmt::format("解析效果#{}（{}）失败：成员 fp16 必须为 bool 类型", id, effectNames[id]));
+						allSuccess = false;
+						return;
+					}
+
+					if (prop.value.GetBool()) {
+						effectFlag |= EFFECT_FLAG_FP16;
+					}
+					continue;
 				} else if (name == "scale") {
 					auto scaleProp = effectJson.FindMember("scale");
 					if (scaleProp != effectJson.MemberEnd()) {
@@ -426,18 +490,19 @@ bool Renderer::_UpdateDynamicConstants() {
 	//     uint __frameCount;
 	// };
 
-	if (_cursorManager->HasCursor()) {
-		const POINT* pos = _cursorManager->GetCursorPos();
-		const CursorManager::CursorInfo* ci = _cursorManager->GetCursorInfo();
+	CursorManager& cursorManager = App::Get().GetCursorManager();
+	if (cursorManager.HasCursor()) {
+		const POINT* pos = cursorManager.GetCursorPos();
+		const CursorManager::CursorInfo* ci = cursorManager.GetCursorInfo();
 
 		ID3D11Texture2D* cursorTex;
 		CursorManager::CursorType cursorType = CursorManager::CursorType::Color;
-		if (!_cursorManager->GetCursorTexture(&cursorTex, cursorType)) {
+		if (!cursorManager.GetCursorTexture(&cursorTex, cursorType)) {
 			Logger::Get().Error("GetCursorTexture 失败");
 		}
 		assert(pos && ci);
 
-		float cursorZoomFactor = App::Get().GetCursorZoomFactor();
+		float cursorZoomFactor = App::Get().GetConfig().GetCursorZoomFactor();
 		if (cursorZoomFactor < 1e-5) {
 			SIZE srcFrameSize = Utils::GetSizeOfRect(App::Get().GetFrameSource().GetSrcFrameRect());
 			SIZE virtualOutputSize = Utils::GetSizeOfRect(_virtualOutputRect);

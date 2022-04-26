@@ -102,12 +102,14 @@ struct EffectPassDesc {
 	std::vector<UINT> outputs;
 	std::array<UINT, 3> numThreads{};
 	std::pair<UINT, UINT> blockSize{};
+	std::string desc;
 	bool isPSStyle = false;
 };
 
 enum EffectFlags {
 	EFFECT_FLAG_LAST_EFFECT = 0x1,
-	EFFECT_FLAG_INLINE_PARAMETERS = 0x2
+	EFFECT_FLAG_INLINE_PARAMETERS = 0x2,
+	EFFECT_FLAG_FP16 = 0x4
 };
 
 struct EffectDesc {
@@ -123,6 +125,7 @@ struct EffectDesc {
 	std::vector<EffectPassDesc> passes;
 
 	UINT flags = 0;
+	bool isUseDynamic = false;
 };
 
 struct EffectParams {
