@@ -184,7 +184,7 @@ void Utils::RunParallel(std::function<void(UINT)> func, UINT times) {
 #else
 	if (times == 0) {
 		return;
-}
+	}
 
 	if (times == 1) {
 		return func(0);
@@ -245,6 +245,71 @@ bool Utils::ZstdDecompress(std::span<const BYTE> src, std::vector<BYTE>& dest) {
 	return true;
 }
 
+bool Utils::IsStartMenu(HWND hwnd) {
+	// 作为优化，首先检查窗口类
+	wchar_t className[256]{};
+	if (!GetClassName(hwnd, (LPWSTR)className, 256)) {
+		Logger::Get().Win32Error("GetClassName 失败");
+		return false;
+	}
+
+	if (std::wcscmp(className, L"Windows.UI.Core.CoreWindow")) {
+		return false;
+	}
+
+	// 检查可执行文件名称
+	DWORD dwProcId = 0;
+	if (!GetWindowThreadProcessId(hwnd, &dwProcId)) {
+		Logger::Get().Win32Error("GetWindowThreadProcessId 失败");
+		return false;
+	}
+
+	Utils::ScopedHandle hProc(Utils::SafeHandle(OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcId)));
+	if (!hProc) {
+		Logger::Get().Win32Error("OpenProcess 失败");
+		return false;
+	}
+
+	wchar_t fileName[MAX_PATH] = { 0 };
+	if (!GetModuleFileNameEx(hProc.get(), NULL, fileName, MAX_PATH)) {
+		Logger::Get().Win32Error("GetModuleFileName 失败");
+		return false;
+	}
+
+	std::string exeName = StrUtils::UTF16ToUTF8(fileName);
+	exeName = exeName.substr(exeName.find_last_of(L'\\') + 1);
+	StrUtils::ToLowerCase(exeName);
+
+	// win10: searchapp.exe 和 startmenuexperiencehost.exe
+	// win11: searchhost.exe 和 startmenuexperiencehost.exe
+	return exeName == "searchapp.exe" || exeName == "searchhost.exe" || exeName == "startmenuexperiencehost.exe";
+}
+
+bool Utils::SetForegroundWindow(HWND hWnd) {
+	if (::SetForegroundWindow(hWnd)) {
+		return true;
+	}
+
+	// 有多种原因会导致 SetForegroundWindow 失败，因此使用一个 trick 强制切换前台窗口
+	// 来自 https://pinvoke.net/default.aspx/user32.SetForegroundWindow
+	DWORD foreThreadId = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
+	DWORD curThreadId = GetCurrentThreadId();
+
+	if (foreThreadId != curThreadId) {
+		if (!AttachThreadInput(foreThreadId, curThreadId, TRUE)) {
+			Logger::Get().Win32Error("AttachThreadInput 失败");
+			return false;
+		}
+		BringWindowToTop(hWnd);
+		ShowWindow(hWnd, SW_SHOW);
+		AttachThreadInput(foreThreadId, curThreadId, FALSE);
+	} else {
+		BringWindowToTop(hWnd);
+		ShowWindow(hWnd, SW_SHOW);
+	}
+
+	return true;
+}
 
 Utils::Hasher::~Hasher() {
 	if (_hAlg) {

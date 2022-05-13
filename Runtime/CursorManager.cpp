@@ -98,14 +98,45 @@ CursorManager::~CursorManager() {
 }
 
 static std::optional<LRESULT> HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	if (message == WM_LBUTTONDOWN) {
+	if (App::Get().GetConfig().Is3DMode() && App::Get().GetRenderer().IsUIVisiable()) {
+		return std::nullopt;
+	}
+
+	if (message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN) {
 		// 主窗口会在非常特定的情况下收到光标消息：
 		// 1. 未处于捕获状态
 		// 2. 缩放后的位置未被遮挡而缩放前的位置被遮挡
 		// 或用户操作 UI 时
 		HWND hwndSrc = App::Get().GetHwndSrc();
-		if (GetForegroundWindow() != hwndSrc) {
-			SetForegroundWindow(hwndSrc);
+		HWND hwndForground = GetForegroundWindow();
+		if (hwndForground != hwndSrc) {
+			if (!Utils::SetForegroundWindow(hwndSrc)) {
+				// 设置前台窗口失败，可能是因为前台窗口是开始菜单
+				if (Utils::IsStartMenu(hwndForground)) {
+					// 限制触发频率
+					static std::chrono::steady_clock::time_point prevTimePoint{};
+					auto now = std::chrono::steady_clock::now();
+					if (std::chrono::duration_cast<std::chrono::milliseconds>(now - prevTimePoint).count() >= 1000) {
+						prevTimePoint = now;
+
+						// 模拟按键关闭开始菜单
+						INPUT inputs[4]{};
+						inputs[0].type = INPUT_KEYBOARD;
+						inputs[0].ki.wVk = VK_LWIN;
+						inputs[1].type = INPUT_KEYBOARD;
+						inputs[1].ki.wVk = VK_LWIN;
+						inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+						SendInput((UINT)std::size(inputs), inputs, sizeof(INPUT));
+
+						// 等待系统处理
+						Sleep(1);
+					}
+
+					SetForegroundWindow(hwndSrc);
+				}
+			}
+
+			return 0;
 		}
 
 		if (!App::Get().GetConfig().IsBreakpointMode()) {
@@ -119,7 +150,7 @@ static std::optional<LRESULT> HostWndProc(HWND hWnd, UINT message, WPARAM wParam
 bool CursorManager::Initialize() {
 	App::Get().RegisterWndProcHandler(HostWndProc);
 
-	if (App::Get().GetConfig().IsConfineCursorIn3DGames()) {
+	if (App::Get().GetConfig().Is3DMode()) {
 		POINT cursorPos;
 		::GetCursorPos(&cursorPos);
 		_StartCapture(cursorPos);
@@ -161,6 +192,14 @@ void CursorManager::OnBeginFrame() {
 		return;
 	}
 
+	if (App::Get().GetConfig().Is3DMode()) {
+		HWND hwndFore = GetForegroundWindow();
+		if (hwndFore != App::Get().GetHwndHost() && hwndFore != App::Get().GetHwndSrc()) {
+			_curCursor = NULL;
+			return;
+		}
+	}
+
 	CURSORINFO ci{};
 	ci.cbSize = sizeof(ci);
 	if (!::GetCursorInfo(&ci)) {
@@ -180,23 +219,6 @@ void CursorManager::OnBeginFrame() {
 	}
 
 	_curCursorPos = SrcToHost(ci.ptScreenPos, false);
-
-	POINT cursorLeftTop = {
-		_curCursorPos.x - _curCursorInfo->hotSpot.x,
-		_curCursorPos.y - _curCursorInfo->hotSpot.y
-	};
-
-	const RECT& outputRect = App::Get().GetRenderer().GetOutputRect();
-	if (cursorLeftTop.x >= outputRect.right
-		|| cursorLeftTop.y >= outputRect.bottom
-		|| cursorLeftTop.x + _curCursorInfo->size.cx < outputRect.left
-		|| cursorLeftTop.y + _curCursorInfo->size.cy < outputRect.top
-	) {
-		// 光标的渲染位置不在屏幕内
-		_curCursor = NULL;
-		return;
-	}
-
 	_curCursor = ci.hCursor;
 }
 
@@ -568,7 +590,7 @@ void CursorManager::_UpdateCursorClip() {
 
 	const RECT& srcFrameRect = App::Get().GetFrameSource().GetSrcFrameRect();
 
-	if (!App::Get().GetConfig().IsBreakpointMode() && App::Get().GetConfig().IsConfineCursorIn3DGames()) {
+	if (!App::Get().GetConfig().IsBreakpointMode() && App::Get().GetConfig().Is3DMode()) {
 		// 开启“在 3D 游戏中限制光标”则每帧都限制一次光标
 		_curClips = srcFrameRect;
 		ClipCursor(&srcFrameRect);

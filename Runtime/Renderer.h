@@ -45,11 +45,9 @@ public:
 		return (UINT)_effects.size();
 	}
 
-	const EffectDesc& GetEffectDesc(size_t idx) const noexcept;
+	const EffectDesc& GetEffectDesc(UINT idx) const noexcept;
 
 private:
-	bool _InitializeOverlayDrawer();
-
 	bool _CheckSrcState();
 
 	bool _ResolveEffectsJson(const std::string& effectsJson);

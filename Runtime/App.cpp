@@ -301,7 +301,7 @@ bool App::_CreateHostWnd() {
 	}
 
 	_hwndHost = CreateWindowEx(
-		(_config->IsBreakpointMode() ? 0 : WS_EX_TOPMOST) | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT,
+		(_config->IsBreakpointMode() ? 0 : WS_EX_TOPMOST) | WS_EX_NOACTIVATE | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW,
 		HOST_WINDOW_CLASS_NAME,
 		HOST_WINDOW_TITLE,
 		WS_POPUP,
@@ -413,8 +413,9 @@ LRESULT App::_HostWndProcStatic(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
 
 
 LRESULT App::_HostWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	for (auto& pair : _wndProcHandlers) {
-		const auto& result = pair.second(hWnd, message, wParam, lParam);
+	// 以反向调用回调
+	for (auto it = _wndProcHandlers.rbegin(); it != _wndProcHandlers.rend(); ++it) {
+		const auto& result = it->second(hWnd, message, wParam, lParam);
 		if (result.has_value()) {
 			return result.value();
 		}

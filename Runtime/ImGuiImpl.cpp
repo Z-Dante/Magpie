@@ -32,6 +32,9 @@ static std::optional<LRESULT> WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam,
 	ImGuiIO& io = ImGui::GetIO();
 
 	if (!io.WantCaptureMouse) {
+		if (msg == WM_LBUTTONDOWN && App::Get().GetConfig().Is3DMode()) {
+			App::Get().GetRenderer().SetUIVisibility(false);
+		}
 		return std::nullopt;
 	}
 
@@ -84,7 +87,7 @@ static std::optional<LRESULT> WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam,
 		break;
 	case WM_MOUSEHWHEEL:
 		io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
-		return 0;
+		break;
 	}
 
 	return std::nullopt;
@@ -100,20 +103,14 @@ static LRESULT CALLBACK LowLevelMouseProc(
 	}
 
 	if (wParam == WM_MOUSEWHEEL || wParam == WM_MOUSEHWHEEL) {
-		auto window = ImGui::GetCurrentContext()->HoveredWindow;
-		if (!window || window->ScrollMax.y == 0.0f || window->Collapsed) {
-			// 当前窗口没有滚动条，则不拦截
-			return CallNextHookEx(NULL, nCode, wParam, lParam);
-		}
-
 		// 向主线程发送滚动数据
 		// 使用 Windows 消息进行线程同步
-		PostMessage(App::Get().GetHwndHost(), wParam, ((MSLLHOOKSTRUCT*)lParam)->mouseData, 0);
+		PostMessage(App::Get().GetHwndHost(), (UINT)wParam, ((MSLLHOOKSTRUCT*)lParam)->mouseData, 0);
 
 		// 阻断滚轮消息，防止传给源窗口
 		return -1;
 	} else if (wParam >= WM_LBUTTONDOWN && wParam <= WM_RBUTTONUP) {
-		PostMessage(App::Get().GetHwndHost(), wParam, 0, 0);
+		PostMessage(App::Get().GetHwndHost(), (UINT)wParam, 0, 0);
 
 		// 阻断点击消息，防止传给源窗口
 		return -1;
@@ -176,7 +173,7 @@ bool ImGuiImpl::Initialize() {
 	}
 
 	// 断点模式下不注册鼠标钩子，否则调试时鼠标无法使用
-	if (!App::Get().GetConfig().IsBreakpointMode()) {
+	if (!App::Get().GetConfig().IsBreakpointMode() && !App::Get().GetConfig().Is3DMode()) {
 		_hHookThread = CreateThread(nullptr, 0, ThreadProc, nullptr, 0, &_hookThreadId);
 		if (!_hHookThread) {
 			Logger::Get().Win32Error("创建线程失败");
@@ -188,6 +185,11 @@ bool ImGuiImpl::Initialize() {
 
 static void UpdateMousePos() {
 	ImGuiIO& io = ImGui::GetIO();
+
+	if (App::Get().GetConfig().Is3DMode() && !App::Get().GetRenderer().IsUIVisiable()) {
+		io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+		return;
+	}
 
 	POINT pos;
 	CursorManager& cm = App::Get().GetCursorManager();
@@ -219,7 +221,7 @@ void ImGuiImpl::NewFrame() {
 	// Setup display size (every frame to accommodate for window resizing)
 	const RECT& hostRect = App::Get().GetHostWndRect();
 	const RECT& outputRect = App::Get().GetRenderer().GetOutputRect();
-	io.DisplaySize = ImVec2((float)(hostRect.right - outputRect.left), (float)(hostRect.bottom - outputRect.top));
+	io.DisplaySize = ImVec2((float)(outputRect.right - outputRect.left), (float)(outputRect.bottom - outputRect.top));
 
 	// Update OS mouse position
 	UpdateMousePos();
@@ -235,6 +237,30 @@ void ImGuiImpl::NewFrame() {
 	ImGui_ImplDX11_NewFrame();
 	ImGui::NewFrame();
 
+	// 将所有 ImGUI 窗口限制在视口内
+	SIZE outputSize = Utils::GetSizeOfRect(App::Get().GetRenderer().GetOutputRect());
+	for (ImGuiWindow* window : ImGui::GetCurrentContext()->Windows) {
+		if (window->Flags & ImGuiWindowFlags_Tooltip) {
+			continue;
+		}
+
+		ImVec2 pos = window->Pos;
+
+		if (outputSize.cx > window->Size.x) {
+			pos.x = std::clamp(pos.x, 0.0f, outputSize.cx - window->Size.x);
+		} else {
+			pos.x = 0;
+		}
+
+		if (outputSize.cy > window->Size.y) {
+			pos.y = std::clamp(pos.y, 0.0f, outputSize.cy - window->Size.y);
+		} else {
+			pos.y = 0;
+		}
+
+		ImGui::SetWindowPos(window, pos);
+	}
+
 	CursorManager& cm = App::Get().GetCursorManager();
 
 	if (io.WantCaptureMouse) {
@@ -246,31 +272,43 @@ void ImGuiImpl::NewFrame() {
 			cm.OnCursorLeaveOverlay();
 		}
 	}
-
-	// 将所有 ImGUI 窗口限制在视口内
-	SIZE outputSize = Utils::GetSizeOfRect(App::Get().GetRenderer().GetOutputRect());
-	for (ImGuiWindow* window : ImGui::GetCurrentContext()->Windows) {
-		if (outputSize.cx > window->Size.x) {
-			window->Pos.x = std::clamp(window->Pos.x, 0.0f, outputSize.cx - window->Size.x);
-		} else {
-			window->Pos.x = 0;
-		}
-
-		if (outputSize.cy > window->Size.y) {
-			window->Pos.y = std::clamp(window->Pos.y, 0.0f, outputSize.cy - window->Size.y);
-		} else {
-			window->Pos.y = 0;
-		}
-	}
 }
 
 void ImGuiImpl::EndFrame() {
 	const RECT& outputRect = App::Get().GetRenderer().GetOutputRect();
 	ImGui::GetDrawData()->DisplayPos = ImVec2(float(-outputRect.left), float(-outputRect.top));
+	ImGui::GetDrawData()->DisplaySize = ImVec2((float)(outputRect.right), (float)(outputRect.bottom));
 
 	auto d3dDC = App::Get().GetDeviceResources().GetD3DDC();
 	d3dDC->OMSetRenderTargets(1, &_rtv, NULL);
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void ImGuiImpl::Tooltip(const char* content, float maxWidth) {
+	ImVec2 padding = ImGui::GetStyle().WindowPadding;
+	ImVec2 contentSize = ImGui::CalcTextSize(content, nullptr, false, maxWidth - 2 * padding.x);
+	ImVec2 windowSize(contentSize.x + 2 * padding.x, contentSize.y + 2 * padding.y);
+	ImGui::SetNextWindowSize(windowSize);
+
+	ImVec2 windowPos = ImGui::GetMousePos();
+	windowPos.x += 16 * ImGui::GetStyle().MouseCursorScale;
+	windowPos.y += 8 * ImGui::GetStyle().MouseCursorScale;
+
+	SIZE outputSize = Utils::GetSizeOfRect(App::Get().GetRenderer().GetOutputRect());
+	windowPos.x = std::clamp(windowPos.x, 0.0f, outputSize.cx - windowSize.x);
+	windowPos.y = std::clamp(windowPos.y, 0.0f, outputSize.cy - windowSize.y);
+
+	ImGui::SetNextWindowPos(windowPos);
+
+	ImGui::SetNextWindowBgAlpha(ImGui::GetStyle().Colors[ImGuiCol_PopupBg].w);
+	ImGui::Begin("tooltip", NULL, ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
+
+	ImGui::PushTextWrapPos(maxWidth - padding.x);
+	ImGui::TextUnformatted(content);
+	ImGui::PopTextWrapPos();
+
+	ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+	ImGui::End();
 }
 
 void ImGuiImpl::ClearStates() {
