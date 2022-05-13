@@ -63,7 +63,7 @@
   // },
   // Anime4k = Best for anime type artworks. Does not lose any detail like ACNet. However does not look as clean as ACNet 
   {
-    "name": "ANime4k",
+    "name": "Anime4k",
     "effects": [
       {
         "effect": "Anime4K_Upscale_L"
@@ -75,7 +75,7 @@
     ]
   },
   {
-    "name": "ANime4k Thinlines",
+    "name": "Anime4k Thinlines",
     "effects": [
       {
         "effect": "Anime4K_Upscale_L"
@@ -90,7 +90,7 @@
     ]
   },
   {
-    "name": "ANime4kGAN (S)",
+    "name": "Anime4kGAN (S)",
     "effects": [
       {
         "effect": "Anime4K_Upscale_GAN_x2_S"
@@ -104,7 +104,7 @@
   // Restore is used to make images clearer and sharper after upscaling. Might produce ringing. 
   // VL has a very high performance cost but produces the best result. Use L or M for better performance but they will cause more artefacts.
   {
-    "name": "ANime4kGAN (S) Restore Soft",
+    "name": "Anime4kGAN (S) Restore Soft",
     "effects": [
       {
         "effect": "Anime4K_Upscale_GAN_x2_S"
@@ -119,7 +119,7 @@
     ]
   },
   {
-    "name": "ANime4kGAN (S) Restore VL !",
+    "name": "Anime4kGAN (S) Restore VL !",
     "effects": [
       {
         "effect": "Anime4K_Upscale_GAN_x2_S"
@@ -138,6 +138,18 @@
     "effects": [
       {
         "effect": "FSRCNNX_LineArt"
+      },
+      {
+        "effect": "SSimDownscaler",
+        "scale": [ -1, -1 ]
+      }
+    ]
+  },
+  {
+    "name": "NNEDI3_nns16",
+    "effects": [
+      {
+        "effect": "NNEDI3_nns16_win8x4"
       },
       {
         "effect": "SSimDownscaler",
@@ -257,6 +269,7 @@
   //     }
   //   ]
   // },
+  // For >2x Upscaling
   // {
   //   "name": "ANime4k 3x !", // For large (1440p / 4k) displays only
   //   "effects": [
