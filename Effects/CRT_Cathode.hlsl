@@ -5,41 +5,10 @@
 //Cathode by nimitz (twitter: @stormoid)
 //2017 nimitz All rights reserved
 
-/*
-	CRT simulation shadowmask style, I also have a trinitron version
-	optimized for 4X scaling on a ~100ppi display.
-
-	The "Scanlines" seen in the simulated picture are only a side effect of the phoshor placement
-	and decay, instead of being artificially added on at the last step.
-
-	I have done some testing and it performs especially well with "hard" input such a faked
-	(dither based) transparency and faked specular highlights as seen in the bigger sprite.
-	A version tweaked and made for 4k displays could look pretty close to the real thing.
-*/
+//Original taken from https://github.com/Blinue/MagpieToys
 
 //!MAGPIE EFFECT
-//!VERSION 1
-
-
-//!CONSTANT
-//!VALUE INPUT_PT_X
-float inputPtX;
-
-//!CONSTANT
-//!VALUE INPUT_PT_Y
-float inputPtY;
-
-//!CONSTANT
-//!VALUE INPUT_WIDTH
-float inputWidth;
-
-//!CONSTANT
-//!VALUE INPUT_HEIGHT
-float inputHeight;
-
-//!CONSTANT
-//!VALUE OUTPUT_WIDTH
-float outputWidth;
+//!VERSION 2
 
 //!TEXTURE
 Texture2D INPUT;
@@ -48,9 +17,9 @@ Texture2D INPUT;
 //!FILTER POINT
 SamplerState sam;
 
-
 //!PASS 1
-//!BIND INPUT
+//!STYLE PS
+//!IN INPUT
 
 //Phosphor decay
 float decay(in float d) {
@@ -67,11 +36,15 @@ float sqd(in float2 a, in float2 b) {
 }
 
 float4 Pass1(float2 pos) {
-	float2 p = pos * float2(inputWidth, inputHeight);
+	float2 inputSize = GetInputSize();
+	float2 inputPt = GetInputPt();
+	float2 outputSize = GetOutputSize();
+
+	float2 p = pos * inputSize;
 
 	float3 col = 0;
 	p -= 0.25;
-	float gl_FragCoordX = pos.x * outputWidth;
+	float gl_FragCoordX = pos.x * outputSize.x;
 	p.y += fmod(gl_FragCoordX, 2.) < 1. ? .03 : -0.03;
 	p.y += fmod(gl_FragCoordX, 4.) < 2. ? .02 : -0.02;
     
@@ -81,7 +54,7 @@ float4 Pass1(float2 pos) {
 		[unroll]
 		for (int j = -2; j <= 2; j++) {
 			float2 tap = floor(p) + 0.5 + float2(i, j);
-			float3 rez = INPUT.Sample(sam, tap * float2(inputPtX, inputPtY)).rgb; //nearest neighbor
+			float3 rez = INPUT.SampleLevel(sam, tap * float2(inputPt.x, inputPt.y), 0).rgb; //nearest neighbor
         
 			//center points
 			float rd = sqd(tap, p + float2(0.0, 0.2)); //distance to red dot

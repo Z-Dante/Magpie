@@ -259,16 +259,15 @@
       }
     ]
   },
-//  Best CRT Simulation effect. Waiting for v2 port
-  // {
-  //   "name": "CRT Cathode",
-  //   "effects": [
-  //     {
-  //       "effect": "CRT_Cathode",
-  //       "scale": [ -1, -1 ]
-  //     }
-  //   ]
-  // },
+  {
+    "name": "CRT Cathode",
+    "effects": [
+      {
+        "effect": "CRT_Cathode",
+        "scale": [ -1, -1 ]
+      }
+    ]
+  },
   // For >2x Upscaling
   // {
   //   "name": "ANime4k 3x !", // For large (1440p / 4k) displays only
